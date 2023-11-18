@@ -2,9 +2,15 @@ import { KnotProps } from './types';
 import { HalfCycle } from './halfcycle';
 import gcd from './gcd';
 
+const InvertPattern = {
+  '\\': '/',
+  '/': '\\',
+};
+
 export class Knot {
   parts: number;
   bights: number;
+  // assume casa coding
   pattern: string;
   sobre: boolean;
 
@@ -33,7 +39,7 @@ export class Knot {
       throw "the parts and bights both must be greater than 0";
     }
     if (gcd(this.parts, this.bights) != 1) {
-      // TODO: handl multiple strands
+      // TODO: handle multiple strands
       throw "the parts and bights must have a greatest common divisor of 1";
     }
   }
@@ -41,7 +47,9 @@ export class Knot {
   fillCoding() {
     this.coding = '';
     for (let i = 0; i < this.parts - 1; i++) {
-      this.coding += this.pattern[i % this.pattern.length];
+      this.coding += this.sobre
+        ? InvertPattern[this.pattern[i % this.pattern.length]]
+        : this.pattern[i % this.pattern.length];
     }
   }
 
@@ -69,9 +77,9 @@ export class Knot {
   }
 
   getPartFromType(isOver: boolean) {
-    return isOver
-      ? this.sobre ? 'U' : 'O'
-      : this.sobre ? 'O' : 'U';
+    return isOver ? 'O' : 'U';
+      // ? this.sobre ? 'U' : 'O'
+      // : this.sobre ? 'O' : 'U';
   }
   fillUo() {
     for (let i = 0; i < this.parts - 1; i++) {
