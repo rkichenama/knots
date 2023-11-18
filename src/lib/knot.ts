@@ -2,11 +2,6 @@ import { KnotProps } from './types';
 import { HalfCycle } from './halfcycle';
 import gcd from './gcd';
 
-const InvertPattern = {
-  '\\': '/',
-  '/': '\\',
-};
-
 export class Knot {
   parts: number;
   bights: number;
@@ -47,9 +42,7 @@ export class Knot {
   fillCoding() {
     this.coding = '';
     for (let i = 0; i < this.parts - 1; i++) {
-      this.coding += this.sobre
-        ? InvertPattern[this.pattern[i % this.pattern.length]]
-        : this.pattern[i % this.pattern.length];
+      this.coding += this.pattern[i % this.pattern.length];
     }
   }
 
@@ -77,9 +70,9 @@ export class Knot {
   }
 
   getPartFromType(isOver: boolean) {
-    return isOver ? 'O' : 'U';
-      // ? this.sobre ? 'U' : 'O'
-      // : this.sobre ? 'O' : 'U';
+    return isOver
+      ? this.sobre ? 'U' : 'O'
+      : this.sobre ? 'O' : 'U';
   }
   fillUo() {
     for (let i = 0; i < this.parts - 1; i++) {
