@@ -1,6 +1,6 @@
 {
   "name": "knots",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -12,7 +12,7 @@
     "start:dev": "webpack serve --mode development",
     "test": "tsc --noEmit --module commonjs",
     "release": "standard-version -a",
-    "postrelease": "git push --follow-tags origin master",
+    "postrelease": "git push --follow-tags origin main",
     "types": "npx types-installer install"
   },
   "repository": {
