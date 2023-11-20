@@ -118,13 +118,18 @@ export class Knot {
 
       const cyclicBightNumber = (num - 2 - (num % 2)) / 2;
 
-      const [codingPattern, side] = num % 2
-        ? [this.topCodingPattern, this.topCyclicBightNumber]
-        : [this.botCodingPattern, this.botCyclicBightNumber];
-      for (let i = 0; i < codingPattern.length; i++) {
-        if (side[i] <= cyclicBightNumber) {
-          hc.append(codingPattern[i]);
+      if (num % 2) {
+        for (let i = 0; i < this.topCodingPattern.length; i++) {
+            if(this.topCyclicBightNumber[i] <= cyclicBightNumber) {
+                hc.append(this.topCodingPattern[i]);
+            }
         }
+      } else {
+          for (let i = this.botCodingPattern.length - 1; i >= 0; i--) {
+              if(this.botCyclicBightNumber[i] <= cyclicBightNumber) {
+                  hc.append(this.botCodingPattern[i]);
+              }
+          }
       }
 
       this.halfCycles.push(hc);
