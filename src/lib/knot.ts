@@ -36,6 +36,11 @@ export class Knot {
     if (gcd(this.parts, this.bights) != 1) {
       // TODO: handle multiple strands
       throw "the parts and bights must have a greatest common divisor of 1";
+      /*
+        if bights !== parts
+          divide by gcd and make gcd times knots
+          6bx4p is 2 3bx2p interwoven knots
+      */
     }
   }
 
@@ -156,3 +161,18 @@ export class Knot {
     return list;
   }
 }
+/*
+  herringbone (row coded: parallel to bights)
+    2+ BxP (casa, sobre, ...) interwoven
+  pineapple
+    A = # of passes, 2
+    L = left bight boundry
+    R = right bight boundry
+    type 1
+      L = 2, R = 2
+    type 2
+      L = 2, R = 1
+    type 3 (A min 3)
+      L = 3, R = 1
+  gaucho
+*/

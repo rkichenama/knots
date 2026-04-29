@@ -1,0 +1,109 @@
+import React, { useRef } from 'react';
+import {
+  changeRows,
+  changeStrands,
+  changePattern,
+  changeColors,
+  strandsLeftSelector,
+  strandsRightSelector,
+  rightBasePatternSelector,
+  leftBasePatternSelector,
+  rightColorSelector,
+  leftColorSelector,
+  rowsSelector
+} from '../reducers/config';
+import { setPattern, patternRowsSelector } from '../reducers/pattern';
+
+const Controls = ({ left, right, leftBase, rightBase, leftClr, rightClr, changeRows, changeStrands, changePattern, changeColors, pattern, setPattern, rows }) => {
+  const importEl = useRef(null);
+  const performImport = () => {
+    const { current: textarea } = importEl;
+    const str = textarea.value.trim();
+    if (str.length) {
+      try {
+        const { left, right, leftClr, rightClr, pattern } = decompressPattern(str);
+        console.log(left, right, pattern)
+        changeStrands('left', left);
+        changeStrands('right', right);
+        changeColors('left', leftClr);
+        changeColors('right', rightClr);
+        setPattern(pattern);
+      } catch (error) {
+        console.log(error);
+      }
+    }
+  };
+
+  return (
+    <div className='controls'>
+      <label>Weave Rows</label>
+      <input
+        type='range'
+        max={60}
+        min={4}
+        value={rows}
+        step={4}
+        onChange={evt => changeRows(evt.target.value) }
+      />
+      <span>{rows}</span>
+      <hr />
+      <label>Strands on Left</label>
+      <input
+        type='range'
+        max={16}
+        min={4}
+        value={left}
+        onChange={evt => changeStrands('left', Number(evt.target.value)) }
+      />
+      <span>{left}</span>
+      <label>Left Color(s)</label>
+      <input type='color' value={leftClr} onChange={evt => {
+          changeColors('left', evt.target.value.trim())
+        }} />
+      <label>Base Pattern</label>
+      <input type='text' value={leftBase} onChange={evt => {
+          (evt.target.value.length >= 1) && changePattern('left', evt.target.value)
+        }} />
+      <hr />
+      <label>Strands on Right</label>
+      <input
+        type='range'
+        max={16}
+        min={4}
+        value={right}
+        onChange={evt => changeStrands('right', Number(evt.target.value)) }
+      />
+      <span>{right}</span>
+      <label>Right Color(s)</label>
+      <input type='color' value={rightClr} onChange={evt => {
+          changeColors('right', evt.target.value.trim())
+        }} />
+      <label>Base Pattern</label>
+      <input type='text' value={rightBase} onChange={evt => {
+          (evt.target.value.length >= 1) && changePattern('right', evt.target.value)
+        }} />
+      <hr />
+      <label className='full'>Current Pattern</label>
+      <textarea rows={5} value={
+          compressPattern(left, right, leftClr, rightClr, pattern)
+        }/>
+      <hr />
+      <textarea rows={5} ref={importEl} />
+      <button className='full' onClick={performImport}>Import Pattern</button>
+    </div>
+  );
+};
+
+export default connect(
+  s => ({
+    left: strandsLeftSelector(s),
+    right: strandsRightSelector(s),
+    rightBase: rightBasePatternSelector(s),
+    leftBase: leftBasePatternSelector(s),
+    rightClr: rightColorSelector(s),
+    leftClr: leftColorSelector(s),
+    pattern: patternRowsSelector(s),
+    rows: rowsSelector(s)
+  }),
+  { changeRows, changeStrands, changePattern, changeColors, setPattern, }
+)(Controls);

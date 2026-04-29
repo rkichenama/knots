@@ -1,0 +1,64 @@
+@import '../styles/layout';
+
+#controls {
+
+  .row {
+    background-color: rgba(0, 0, 0, 0.2);
+    padding: 4px;
+    row-gap: 4px;
+  }
+  hr {
+    width: 90%;
+  }
+  label {
+    @extend .x1;
+    @extend .w4;
+  }
+  input:not([type="color"]), textArea, button {
+    @extend .x5;
+    @extend .w7;
+  }
+  input[type="color"] {
+    @extend .x7;
+    @extend .w3;
+  }
+  label,
+  input + span {
+    @extend .align-middle;
+  }
+
+  input[type="color"] {
+    -webkit-appearance: none;
+    border: 0;
+    width: 32px;
+    height: 32px;
+    margin: 0 auto;
+    &::-webkit-color-swatch-wrapper {
+      padding: 0;
+    }
+    &::-webkit-color-swatch {
+      border: 0;
+    }
+  }
+  input[type="range"] {
+    &::-webkit-slider-runnable-track {
+      -webkit-appearance: none !important;
+      background-color: #333;
+      cursor: pointer;
+    }
+    &::-webkit-slider-thumb {
+      -webkit-appearance: none !important;
+      border: 1px solid #369;
+      border-radius: 3px;
+      height: 18px;
+      width: 6px;
+      background-color: #336699;
+      cursor: pointer;
+      box-shadow: 1px 1px 1px #000000, 0px 0px 1px #0d0d0d; /* Add cool effects to your sliders! */
+    }
+    + span {
+      text-align: right;
+    }
+  }
+
+}

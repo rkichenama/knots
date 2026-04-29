@@ -1,0 +1,95 @@
+@import '../styles/variables';
+
+#sheet {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  flex: 1 1 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+
+  #weave {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-auto-rows: 24px;
+    grid-gap: 14px 0px;
+
+    .nub {
+      color: white;
+      text-shadow: 1px 1px 0px black, 1px -1px 0px black, -1px -1px 0px black, -1px -1px 0px black;
+      mix-blend-mode: difference;
+    }
+
+    > div {
+      display: flex;
+      flex-wrap: nowrap;
+      padding: 2px 1px;
+      justify-content: stretch;
+      align-items: stretch;
+      background-color: #131313;
+      height: 28px;
+
+      > div {
+        flex: 1 1 24px;
+        height: 24px;
+        @extend %flex-center;
+        font-size: 14px;
+
+        & + div {
+          margin: 0 1px;
+        }
+      }
+
+      &.right-hand {
+        position: relative;
+        transform-origin: left bottom;
+        transform: rotate(-45deg);
+        flex-direction: row-reverse;
+
+        .over { background-color: var(--clr-left); }
+        .under { background-color: var(--clr-right); }
+        // > div {
+        //   background-color: red;
+        // }
+        &:after {
+          @extend %flex-center;
+          justify-content: flex-start;
+          content: attr(data-dir);
+          position: absolute;
+          top: 0;
+          left: calc(100% + 4px);
+          transform-origin: left bottom;
+          transform: rotateZ(45deg);
+          white-space: nowrap;
+        }
+      }
+      &.left-hand {
+        position: relative;
+        transform-origin: right bottom;
+        transform: rotate(45deg) translateX(-26px);
+        .over { background-color: var(--clr-right); }
+        .under { background-color: var(--clr-left); }
+        // > div {
+        //   background-color: blue;
+        // }
+        &:before {
+          @extend %flex-center;
+          justify-content: flex-end;
+          content: attr(data-dir);
+          position: absolute;
+          top: 0;
+          right: calc(100% + 4px);
+          transform-origin: right bottom;
+          transform: rotateZ(-45deg);
+          white-space: nowrap;
+        }
+      }
+
+      .over:hover:before {
+        content: "O"
+      }
+      .under:hover:before {
+        content: "U"
+      }
+    }
+  }
+}

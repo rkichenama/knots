@@ -1,0 +1,129 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,700;1,400;1,700&family=Roboto:ital,wght@0,100;0,300;0,400;0,700;1,100;1,300;1,400;1,700&family=Source+Code+Pro:ital,wght@0,400;0,700;1,400&display=swap');
+@import './styles/variables';
+
+.good { color: var(--success); }
+.bad { color: var(--error); }
+.wait { color: var(--pending); }
+.highlighted { color: var(--highlight); }
+.contrastBg { background-color: var(--contrast-screen); }
+
+html {
+  /* variables */
+  --fg-clr: #{$fg-clr};
+  --bg-clr: #{$bg-clr};
+  --accent-clr: #{$accent};
+  --dark-accent-clr: #{$dark-accent};
+  --highlight: #{$highlight};
+  --success: #{$traffic-green};
+  --pending: #{$traffic-yellow};
+  --error: #{$traffic-red};
+  --loading-screen: #{$loading-screen};
+  --contrast-screen: #{$contrast-screen};
+  @for $i from 1 through length($rainbow) {
+    --rainbow#{$i}: #{nth($rainbow, $i)};
+  }
+  --accent-clr-rgb: #{red($accent-rgb)}, #{green($accent-rgb)}, #{blue($accent-rgb)};
+}
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+  width: 100vw;
+  /* colors */
+  color: var(--fg-clr);
+  background-color: var(--bg-clr);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='49' viewBox='0 0 28 49'%3E%3Cg fill-rule='evenodd'%3E%3Cg id='hexagons' fill='black' fill-opacity='0.4' fill-rule='nonzero'%3E%3Cpath d='M13.99 9.25l13 7.5v15l-13 7.5L1 31.75v-15l12.99-7.5zM3 17.9v12.7l10.99 6.34 11-6.35V17.9l-11-6.34L3 17.9zM0 15l12.98-7.5V0h-2v6.35L0 12.69v2.3zm0 18.5L12.98 41v8h-2v-6.85L0 35.81v-2.3zM15 0v7.5L27.99 15H28v-2.31h-.01L17 6.35V0h-2zm0 49v-8l12.99-7.5H28v2.31h-.01L17 42.15V49h-2z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  a {
+    &, &:link, &:visited {
+      color: var(--accent-clr);
+    }
+    &:active, &:hover {
+      color: var(--highlight);
+    }
+  }
+  /* font */
+}
+/* layout */
+@import './styles/layout';
+body {
+  @extend .as-grid;
+}
+/* html controls */
+@import './styles/form';
+details {
+  &, & > summary {
+    outline: none;
+  }
+  > details {
+    margin-left: 1em;
+  }
+}
+dt, dd {
+  margin: 0;
+  padding: 0;
+  word-break: break-word;
+}
+.reactSelect {
+  &-container &__control {
+    box-shadow: none;
+    border: none;
+    min-height: unset;
+
+    &--is-focused {
+      border-color: darkcyan !important;
+    }
+    * {
+      font-family: 'Roboto', Arial !important;
+    }
+  }
+  &-container,
+  &-container &__value-container,
+  &-container &__input,
+  &-container &__menu,
+  &-container &__option,
+  &-container &__single-value
+  {
+    color: white;
+  }
+  &-container &__menu {
+    background-color: black;
+    z-index: 999;
+  }
+  // &-container &__option,
+  &-container &__control {
+    background-color: transparentize(black, 0.6);
+  }
+  &-container &__option {
+    &--is-selected {
+      background-color: darkcyan;
+      color: gold;
+    }
+    &--is-focused {
+      background-color: darkcyan;
+    }
+  }
+  &-container &__multi-value__remove,
+  &-container &__clear-indicator {
+    &:hover {
+      color: red;
+    }
+  }
+  &-container &__multi-value {
+    background-color: #333;
+    &__label {
+      color: white;
+    }
+    &__remove {
+      color: #ccc;
+      &:hover {
+        background-color: #333;
+      }
+    }
+  }
+  &-container &__menu {
+    margin: 0;
+  }
+  &-container &__dropdown-indicator {
+    padding: 4px;
+  }
+}

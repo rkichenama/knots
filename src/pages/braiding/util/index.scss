@@ -1,0 +1,187 @@
+// reset
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; width: 100%; height: 100%; position: relative; }
+body { display: flex; align-items: center; justify-content: center; }
+// colors
+body { background-color: #131313; color: #eee; }
+// demo
+#content {
+  --clr-left: #333333;
+  --clr-right: #cccccc;
+  width: 100%;
+  height: 100%;
+  padding: 2px;
+
+  input[type="color"] {
+    -webkit-appearance: none;
+    border: 0;
+    width: 32px;
+    height: 32px;
+    margin: 0 auto;
+    &::-webkit-color-swatch-wrapper {
+      padding: 0;
+    }
+    &::-webkit-color-swatch {
+      border: 0;
+    }
+  }
+  input[type="range"] {
+    grid-column: span 2 !important;
+    &::-webkit-slider-runnable-track {
+      -webkit-appearance: none !important;
+      background-color: #336699;
+      cursor: pointer;
+    }
+    &::-webkit-slider-thumb {
+      -webkit-appearance: none !important;
+      border: 1px solid #369;
+      background-color: #336699;
+      cursor: pointer;
+    }
+    + span {
+      text-align: right;
+    }
+  }
+  button {
+    padding: 3px 6px;
+    border: 1px solid #369;
+    -webkit-appearance: none;
+    background-color: transparent;
+    color: #fff;
+
+    &:focus {
+      outline: none;
+      color: yellow;
+    }
+  }
+  input:not([type="range"]),
+  textarea {
+    background-color: hsla(0, 10%, 100%, 0.1);
+    color: white;
+    border: 1px solid #369;
+    -webkit-appearance: none;
+  }
+}
+%flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#app {
+  display: flex;
+  justify-content: flex-start;
+  align-items: flex-start;
+
+  .controls {
+    font-size: .8em;
+    flex: 0 0 192px;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    grid-gap: 4px 0;
+    align-items: center;
+
+    > hr,
+    > textarea,
+    > .full {
+      grid-column: 1 / -1;
+      width: 100% !important;
+    }
+    > label {
+      grid-column: 1 / span 2;
+    }
+    > input,
+    > select {
+      grid-column: span 3;
+    }
+    &.collapsed {
+      flex: 0 0 24px;
+      overflow-x: hidden;
+    }
+  }
+  .sheet {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    flex: 1 1 100%;
+  }
+}
+.weave {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-auto-rows: 24px;
+  grid-gap: 14px 0px;
+
+  > div {
+    display: flex;
+    flex-wrap: nowrap;
+    padding: 2px 1px;
+    justify-content: stretch;
+    align-items: stretch;
+    background-color: #acacac;
+    height: 28px;
+
+    > div {
+      flex: 1 1 24px;
+      height: 24px;
+      @extend %flex-center;
+      font-size: 14px;
+
+      & + div {
+        margin: 0 1px;
+      }
+    }
+
+    &.right-hand {
+      position: relative;
+      transform-origin: left bottom;
+      transform: rotate(-45deg);
+      flex-direction: row-reverse;
+
+      .over { background-color: var(--clr-left); }
+      .under { background-color: var(--clr-right); }
+      // > div {
+      //   background-color: red;
+      // }
+      &:after {
+        @extend %flex-center;
+        justify-content: flex-start;
+        content: attr(data-dir);
+        position: absolute;
+        top: 0;
+        left: calc(100% + 4px);
+        transform-origin: left bottom;
+        transform: rotateZ(45deg);
+        white-space: nowrap;
+      }
+    }
+    &.left-hand {
+      position: relative;
+      transform-origin: right bottom;
+      transform: rotate(45deg) translateX(-26px);
+      .over { background-color: var(--clr-right); }
+      .under { background-color: var(--clr-left); }
+      // > div {
+      //   background-color: blue;
+      // }
+      &:before {
+        @extend %flex-center;
+        justify-content: flex-end;
+        content: attr(data-dir);
+        position: absolute;
+        top: 0;
+        right: calc(100% + 4px);
+        transform-origin: right bottom;
+        transform: rotateZ(-45deg);
+        white-space: nowrap;
+      }
+    }
+
+    .over:hover:before {
+      content: "O"
+    }
+    .under:hover:before {
+      content: "U"
+    }
+  }
+}
