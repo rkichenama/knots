@@ -1,13 +1,11 @@
 {
   "compilerOptions": {
-    "baseUrl": "src",
     "allowJs": false,
     "allowSyntheticDefaultImports": true,
     "jsx": "react-jsx",
     "lib": [ "esnext", "dom" ],
     "module": "esnext",
     "noImplicitAny": false,
-    "outDir": "./dist/",
     "preserveConstEnums": true,
     "removeComments": true,
     "target": "es2020",

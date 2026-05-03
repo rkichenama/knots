@@ -10,11 +10,15 @@ export const KnotDisplay = () => {
 
   return (
     <>
-      {KnotError.value && <h4>{KnotError.value}</h4>}
-      <h2>{knot.bights}B x {knot.parts}P {knot.sobre ? 'sobre' : 'casa'} knot</h2>
-      <AlgorithmDiagram knot={knot} />
-      <KnotGrid />
-      <RunList knot={knot} />
+      {KnotError.value && <h2>{KnotError.value}</h2>}
+      <h3 className="text-center">{knot.bights}B x {knot.parts}P {knot.sobre ? 'sobre' : 'casa'} knot</h3>
+      <div className='grid grid-cols-2'>
+        <AlgorithmDiagram knot={knot} />
+        <KnotGrid />
+        <div className="col-span-2">
+          <RunList knot={knot} />
+        </div>
+      </div>
     </>
   );
 };

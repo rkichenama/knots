@@ -50,31 +50,31 @@ export const KnotControls: React.FC<any> = () => {
       params.set('bights', String(bights));
       params.set('parts', String(parts));
       params.set('sobre', String(sobre));
-      params.set('pattern', pattern);
+      params.set('pattern', pattern ?? '');
       location.hash = params.toString();
-    } catch (err) {
+    } catch (err: any) {
       // setMsg(err.toString());
       KnotError.value = err.toString();
     }
   }, [bights, parts, sobre, pattern]);
 
   return (
-    <div>
-      <label>
+    <div className="grid grid-cols-2 gap-2">
+      <label className="flex justify-between items-center">
         Bights
-        <input type='number' value={bights} min={2} onChange={(e) => change('bights', e)}/>
+        <input className="text-center border" type='number' value={bights} min={2} onChange={(e) => change('bights', e)}/>
       </label>
-      <label>
+      <label className="flex justify-between items-center">
         Parts
-        <input type='number' value={parts} min={2} onChange={(e) => change('parts', e)}/>
+        <input className="text-center border" type='number' value={parts} min={2} onChange={(e) => change('parts', e)}/>
       </label>
-      <label>
+      <label className="flex justify-between items-center">
+        Pattern
+        <input className="text-center border" type='text' value={pattern} onChange={(e) => change('pattern', e)}/>
+      </label>
+      <label className="flex justify-center items-center">
         Sobre
         <input type='checkbox' checked={sobre} onChange={(e) => change('sobre', e)}/>
-      </label>
-      <label>
-        Pattern
-        <input type='text' value={pattern} onChange={(e) => change('pattern', e)}/>
       </label>
     </div>
   );

@@ -7,14 +7,15 @@ type RunListProps = {
 }
 export const RunList: React.FC<RunListProps> = ({ knot }) => (
   <div>
-    <h3>Half Cycles</h3>
-    <HalfCycleList>
+    <h4>Half Cycles</h4>
+    <ol className="list-decimal">
       {knot.steps().map((row) => (
-          <HalfCycleRow key={row}>{row}</HalfCycleRow>
+          <li className="even:bg-gray-100 odd:bg-gray-200" key={row}
+            dangerouslySetInnerHTML={{ __html: row
+              .replace(/(\d+)/g, '<strong class="text-(--highlight)">$1</strong>')
+             }}
+          />
         ))}
-    </HalfCycleList>
+    </ol>
   </div>
 );
-
-const HalfCycleList = styled.ol``;
-const HalfCycleRow = styled.li``;

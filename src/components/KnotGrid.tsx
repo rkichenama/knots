@@ -1,10 +1,11 @@
 import * as React from 'react';
-import styled, { css } from 'styled-components';
+import styled from 'styled-components';
 import { CurrentKnot } from '../data/CurrentKnot';
 import { Knot } from '../lib';
 
 const theta = Math.PI / 6;
 const tanTheta = Math.tan(theta);
+const PAD = 16;
 
 export const KnotGrid = () => {
   const canvas = React.useRef<HTMLCanvasElement>(null);
@@ -16,13 +17,14 @@ export const KnotGrid = () => {
     clearDrawing(canvas.current, knot);
     drawPinsAndGrid(canvas.current, knot);
     drawOverUnders(canvas.current, knot);
+    drawBorders(canvas.current);
 
     // drawIsoGrid(canvas.current);
   }, [knot]);
 
   return (
     <div>
-      <h3>Knot Diagram</h3>
+      <h4>Knot Diagram</h4>
       <ResizeContainer>
         <Canvas ref={canvas}></Canvas>
       </ResizeContainer>
@@ -42,22 +44,27 @@ const Canvas = styled.canvas`
 `;
 
 const clearDrawing = (canvas: HTMLCanvasElement, knot: Knot) => {
-  canvas.height = (knot.bights - 0.5) * 32;
+  canvas.height = (knot.bights - 0.5) * 32 + PAD * 2;
+  // @ts-expect-error parentElement
   canvas.parentElement.style.height = `${canvas.height}px`;
-  canvas.width = (2 * (16 / tanTheta)) * (knot.parts / 2);
+  canvas.width = (2 * (16 / tanTheta)) * (knot.parts / 2) + PAD * 2;
+  // @ts-expect-error parentElement
   canvas.parentElement.style.width = `${canvas.width}px`;
 
   const width = canvas.width;
   const height = canvas.height;
-  const ctx = canvas.getContext('2d');
+  const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
 
-  ctx.clearRect(0, 0, width, height);
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.fillStyle = 'white';
+  ctx.fillRect(0, 0, width, height);
+  ctx.setTransform(1, 0, 0, 1, PAD, PAD);
 };
 
 const drawPinsAndGrid = (canvas: HTMLCanvasElement, knot: Knot) => {
-  const ctx = canvas.getContext('2d');
-  const width = canvas.width;
-  const height = canvas.height;
+  const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
+  const width = canvas.width - PAD * 2;
+  const height = canvas.height - PAD * 2;
   const deltaY = height / (knot.bights - 0.5);
   const deltaX = (2 * ((deltaY / 2) / tanTheta));
 
@@ -117,8 +124,8 @@ const drawPinsAndGrid = (canvas: HTMLCanvasElement, knot: Knot) => {
 };
 
 const drawOverUnders = (canvas: HTMLCanvasElement, knot: Knot) => {
-  const ctx = canvas.getContext('2d');
-  const height = canvas.height;
+  const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
+  const height = canvas.height - PAD * 2;
   const deltaY = height / (knot.bights - 0.5);
   const deltaX = (2 * ((deltaY / 2) / tanTheta));
   ctx.strokeStyle = 'black';
@@ -166,4 +173,16 @@ const drawOverUnders = (canvas: HTMLCanvasElement, knot: Knot) => {
       }
     }
   }
-}
+};
+
+const drawBorders = (canvas: HTMLCanvasElement) => {
+  const width = canvas.width;
+  const height = canvas.height;
+  const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
+
+  ctx.fillStyle = 'white';
+  ctx.fillRect(-PAD, -PAD, width, PAD - 8);
+  ctx.fillRect(-PAD, height - (2 * PAD + 8), width, PAD + 8);
+  ctx.fillRect(-PAD, - PAD, PAD, height);
+  ctx.fillRect(width - (2 * PAD), - PAD, PAD, height);
+};

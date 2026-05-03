@@ -10,7 +10,7 @@ export const AlgorithmDiagram: React.FC<KnotListProps> = ({
   knot: { topCyclicBightNumber, botCyclicBightNumber, topCodingPattern, botCodingPattern, coding }
 }) => (
   <div>
-    <h3>Algorithm Diagram</h3>
+    <h4>Algorithm Diagram</h4>
     <table>
       <tbody>
         <Row items={topCodingPattern} />
@@ -27,7 +27,7 @@ const Cell = styled.td`
   text-align: center;
 `;
 
-const Row = ({ items }: { items: string[] }) => (
+const Row = ({ items }: { items: (string | number)[] }) => (
   <tr>
     {items.map((item, col) => (
       <Cell key={`${col}-${item}`}>{item}</Cell>

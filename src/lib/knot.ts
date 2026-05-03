@@ -9,17 +9,17 @@ export class Knot {
   pattern: string;
   sobre: boolean;
 
-  coding: string;
-  wholeNumber: number;
-  remainder: number;
-  countValue: number;
-  cyclicBightNumber: any[];
-  topCyclicBightNumber: any[];
-  botCyclicBightNumber: any[];
-  topCodingPattern: any[];
-  botCodingPattern: any[];
-  halfCycles: any[];
-  pins: any[];
+  coding: string = '';
+  wholeNumber: number = -1;
+  remainder: number = -1;
+  countValue: number = -1;
+  cyclicBightNumber: number[] = [];
+  topCyclicBightNumber: number[] = [];
+  botCyclicBightNumber: number[] = [];
+  topCodingPattern: string[] = [];
+  botCodingPattern: string[] = [];
+  halfCycles: HalfCycle[] = [];
+  pins: number[] = [];
 
   constructor({ parts = 5, bights = 6, sobre = false, pattern = '\\/' }: KnotProps) {
     this.parts = parts;
