@@ -10,7 +10,6 @@ export const KnotDisplay = () => {
 
   return (
     <>
-      {KnotError.value && <h2>{KnotError.value}</h2>}
       <h3 className="text-center">{knot.bights}B x {knot.parts}P {knot.sobre ? 'sobre' : 'casa'} knot</h3>
       <div className='grid grid-cols-2'>
         <AlgorithmDiagram knot={knot} />
