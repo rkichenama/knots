@@ -12,6 +12,7 @@ let defaultKnot = {
 
 (() => {
   const params = new URLSearchParams(window.location.hash.slice(1));
+  // @ts-expect-error entries on URLSearchParams
   const candidates = Object.fromEntries(params.entries());
   for (const key in defaultKnot) {
     if (candidates[key]) {
