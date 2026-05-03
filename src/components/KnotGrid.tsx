@@ -7,20 +7,22 @@ const theta = Math.PI / 6;
 const tanTheta = Math.tan(theta);
 const PAD = 16;
 
-export const KnotGrid = () => {
+type KnotGridProps = { knot?: Knot; color?: string };
+
+export const KnotGrid = ({ knot: knotProp, color }: KnotGridProps = {}) => {
   const canvas = React.useRef<HTMLCanvasElement>(null);
-  const knot = CurrentKnot.value;
+  const knot = knotProp ?? CurrentKnot.value;
 
   React.useEffect(() => {
     if (!canvas.current || !knot) return;
 
-    clearDrawing(canvas.current, knot);
+    clearDrawing(canvas.current, knot, color);
     drawPinsAndGrid(canvas.current, knot);
     drawOverUnders(canvas.current, knot);
     drawBorders(canvas.current);
 
     // drawIsoGrid(canvas.current);
-  }, [knot]);
+  }, [knot, color]);
 
   return (
     <div>
@@ -43,7 +45,7 @@ const Canvas = styled.canvas`
   width: 100%;
 `;
 
-const clearDrawing = (canvas: HTMLCanvasElement, knot: Knot) => {
+export const clearDrawing = (canvas: HTMLCanvasElement, knot: Knot, strokeColor?: string) => {
   canvas.height = (knot.bights - 0.5) * 32 + PAD * 2;
   canvas.parentElement!.style.height = `${canvas.height}px`;
   canvas.width = (2 * (16 / tanTheta)) * (knot.parts / 2) + PAD * 2;
@@ -57,6 +59,10 @@ const clearDrawing = (canvas: HTMLCanvasElement, knot: Knot) => {
   ctx.fillStyle = 'white';
   ctx.fillRect(0, 0, width, height);
   ctx.setTransform(1, 0, 0, 1, PAD, PAD);
+  if (strokeColor) {
+    ctx.strokeStyle = strokeColor;
+    ctx.fillStyle = strokeColor;
+  }
 };
 
 const drawPinsAndGrid = (canvas: HTMLCanvasElement, knot: Knot) => {
