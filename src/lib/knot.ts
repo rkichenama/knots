@@ -1,6 +1,5 @@
 import { KnotProps } from './types';
 import { HalfCycle } from './halfcycle';
-import gcd from './gcd';
 
 export class Knot {
   parts: number;
@@ -32,15 +31,6 @@ export class Knot {
   checkConditions() {
     if (!this.parts || !this.bights) {
       throw "the parts and bights both must be greater than 0";
-    }
-    if (gcd(this.parts, this.bights) != 1) {
-      // TODO: handle multiple strands
-      throw "the parts and bights must have a greatest common divisor of 1";
-      /*
-        if bights !== parts
-          divide by gcd and make gcd times knots
-          6bx4p is 2 3bx2p interwoven knots
-      */
     }
   }
 

@@ -16,8 +16,10 @@ describe('Knot constructor', () => {
     expect(k.bights).toBe(4);
   });
 
-  it('throws when gcd(parts, bights) !== 1', () => {
-    expect(() => new Knot({ parts: 4, bights: 6 })).toThrow();
+  it('accepts parts and bights with gcd > 1 (multi-strand handled by InterweavedKnot)', () => {
+    const k = new Knot({ parts: 2, bights: 3 });
+    expect(k.parts).toBe(2);
+    expect(k.bights).toBe(3);
   });
 
   it('throws when parts is 0', () => {
