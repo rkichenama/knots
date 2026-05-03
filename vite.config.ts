@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig(({ mode }) => ({
+  base: mode === 'production' ? '/knots/' : '/',
   plugins: [
     tailwindcss(),
     react({
@@ -31,11 +32,15 @@ export default defineConfig(({ mode }) => ({
     port: 3200,
   },
   test: {
+    reporters: ['tree'],
     include: ['src/**/*.test.ts'],
     coverage: {
       provider: 'v8',
       include: ['src/lib/**'],
       thresholds: { functions: 70 },
     },
+    passWithNoTests: true,
+    pool: 'threads',
+    maxWorkers: '50%',
   },
 }))

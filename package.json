@@ -10,7 +10,8 @@
     "build:dev": "vite build --mode development",
     "build:prod": "vite build",
     "start:dev": "vite",
-    "test": "tsc --noEmit && vitest run --coverage",
+    "pretest": "tsc --noEmit",
+    "test": "vitest run --coverage",
     "release": "standard-version -a",
     "postrelease": "git push --follow-tags origin main",
     "types": "pnpm dlx types-installer install"
