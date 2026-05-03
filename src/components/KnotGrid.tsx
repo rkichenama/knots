@@ -45,11 +45,9 @@ const Canvas = styled.canvas`
 
 const clearDrawing = (canvas: HTMLCanvasElement, knot: Knot) => {
   canvas.height = (knot.bights - 0.5) * 32 + PAD * 2;
-  // @ts-expect-error parentElement
-  canvas.parentElement.style.height = `${canvas.height}px`;
+  canvas.parentElement!.style.height = `${canvas.height}px`;
   canvas.width = (2 * (16 / tanTheta)) * (knot.parts / 2) + PAD * 2;
-  // @ts-expect-error parentElement
-  canvas.parentElement.style.width = `${canvas.width}px`;
+  canvas.parentElement!.style.width = `${canvas.width}px`;
 
   const width = canvas.width;
   const height = canvas.height;
