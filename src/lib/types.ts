@@ -9,3 +9,11 @@ export type KnotProps = {
   sobre?: boolean;
   pattern?: string;
 }
+
+export type StrandProps = KnotProps & { color?: string };
+
+export type InterweavedKnotProps = {
+  parts: number;
+  bights: number;
+  strands: StrandProps[];
+};
