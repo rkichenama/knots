@@ -10,7 +10,7 @@
     "build:dev": "vite build --mode development",
     "build:prod": "vite build",
     "start:dev": "vite",
-    "test": "tsc --noEmit",
+    "test": "tsc --noEmit && vitest run --coverage",
     "release": "standard-version -a",
     "postrelease": "git push --follow-tags origin main",
     "types": "pnpm dlx types-installer install"
@@ -42,10 +42,12 @@
     "@types/react-dom": "^18.3.7",
     "@types/styled-components": "^5.1.36",
     "@vitejs/plugin-react": "^6.0.1",
+    "@vitest/coverage-v8": "^4.1.5",
     "babel-plugin-styled-components": "^2.1.4",
     "sass": "^1.99.0",
     "tailwindcss": "^4.2.4",
-    "vite": "^8.0.10"
+    "vite": "^8.0.10",
+    "vitest": "^4.1.5"
   },
   "standard-version": {
     "scripts": {
