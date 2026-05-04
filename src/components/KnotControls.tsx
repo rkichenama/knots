@@ -51,6 +51,24 @@ export const KnotControls: React.FC<any> = () => {
 
   React.useEffect(() => {
     if (numStrands <= 1) {
+      const required = parts && bights ? gcd(parts, bights) : 1;
+      if (required > 1) {
+        // auto-promote: build default configs using current pattern/sobre for all strands
+        const autoConfigs: StrandProps[] = Array.from({ length: required }, () => ({ pattern, sobre }));
+        setNumStrands(required);
+        setStrandConfigs(autoConfigs);
+        setPendingStrands(null);
+        try {
+          KnotError.value = '';
+          const interweaved = new InterweavedKnot({ parts, bights, strands: autoConfigs });
+          CurrentInterweaved.value = interweaved;
+          CurrentKnot.value = interweaved.strands[0];
+          StrandCount.value = interweaved.numStrands;
+        } catch (err: any) {
+          KnotError.value = err.toString();
+        }
+        return;
+      }
       try {
         KnotError.value = '';
         CurrentKnot.value = new Knot({ bights, parts, sobre, pattern });
