@@ -99,3 +99,48 @@ describe('InterweavedKnot.combinedHalfCycles', () => {
     expect(k.combinedHalfCycles().length).toBe(k.strands[0].halfCycles.length);
   });
 });
+
+describe('InterweavedKnot.combinedHalfCyclesWithStrand', () => {
+  it('length equals sum of all strand halfCycles lengths', () => {
+    const k = new InterweavedKnot({ parts: 4, bights: 6, strands: [{}, {}] });
+    const expected = k.strands.reduce((sum, s) => sum + s.halfCycles.length, 0);
+    expect(k.combinedHalfCyclesWithStrand().length).toBe(expected);
+  });
+
+  it('each entry has halfCycle and strandIndex', () => {
+    const k = new InterweavedKnot({ parts: 4, bights: 6, strands: [{}, {}] });
+    const entries = k.combinedHalfCyclesWithStrand();
+    expect(entries[0]).toHaveProperty('halfCycle');
+    expect(entries[0]).toHaveProperty('strandIndex');
+  });
+
+  it('strandIndex values are within valid range', () => {
+    const k = new InterweavedKnot({ parts: 4, bights: 6, strands: [{}, {}] });
+    for (const { strandIndex } of k.combinedHalfCyclesWithStrand()) {
+      expect(strandIndex).toBeGreaterThanOrEqual(0);
+      expect(strandIndex).toBeLessThan(k.numStrands);
+    }
+  });
+
+  it('sorted ascending by fromPin', () => {
+    const k = new InterweavedKnot({ parts: 4, bights: 6, strands: [{}, {}] });
+    const entries = k.combinedHalfCyclesWithStrand();
+    for (let i = 1; i < entries.length; i++) {
+      expect(entries[i].halfCycle.fromPin).toBeGreaterThanOrEqual(entries[i - 1].halfCycle.fromPin);
+    }
+  });
+
+  it('single-strand: all strandIndex are 0', () => {
+    const k = new InterweavedKnot({ parts: 5, bights: 6, strands: [{}] });
+    for (const { strandIndex } of k.combinedHalfCyclesWithStrand()) {
+      expect(strandIndex).toBe(0);
+    }
+  });
+
+  it('multi-strand: contains entries from each strand', () => {
+    const k = new InterweavedKnot({ parts: 4, bights: 6, strands: [{}, {}] });
+    const indices = new Set(k.combinedHalfCyclesWithStrand().map(e => e.strandIndex));
+    expect(indices.has(0)).toBe(true);
+    expect(indices.has(1)).toBe(true);
+  });
+});

@@ -39,8 +39,12 @@ export class InterweavedKnot {
   }
 
   combinedHalfCycles(): HalfCycle[] {
+    return this.combinedHalfCyclesWithStrand().map(e => e.halfCycle);
+  }
+
+  combinedHalfCyclesWithStrand(): { halfCycle: HalfCycle; strandIndex: number }[] {
     return this.strands
-      .flatMap(s => s.halfCycles)
-      .sort((a, b) => a.fromPin - b.fromPin);
+      .flatMap((s, strandIndex) => s.halfCycles.map(halfCycle => ({ halfCycle, strandIndex })))
+      .sort((a, b) => a.halfCycle.fromPin - b.halfCycle.fromPin);
   }
 }
