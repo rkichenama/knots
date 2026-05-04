@@ -1,4 +1,3 @@
-import { HalfCycle } from './halfcycle';
 import { Knot } from './knot';
 import gcd from './gcd';
 import { InterweavedKnotProps } from './types';
@@ -38,13 +37,20 @@ export class InterweavedKnot {
     );
   }
 
-  combinedHalfCycles(): HalfCycle[] {
-    return this.combinedHalfCyclesWithStrand().map(e => e.halfCycle);
-  }
 
-  combinedHalfCyclesWithStrand(): { halfCycle: HalfCycle; strandIndex: number }[] {
-    return this.strands
-      .flatMap((s, strandIndex) => s.halfCycles.map(halfCycle => ({ halfCycle, strandIndex })))
-      .sort((a, b) => a.halfCycle.fromPin - b.halfCycle.fromPin);
+  combinedHalfCyclesWithStrand(): { step: string; strandIndex: number }[] {
+    const list = [] as { step: string; strandIndex: number }[];
+    const allSteps = this.strands
+      .map((s, strandIndex) => (
+        s.steps().map(step => ({ step, strandIndex }))
+      ));
+    for (let j = 0; j < Math.max(...allSteps.map(s => s.length)); j++) {
+      for (let i = 0; i < this.numStrands; i++) {
+        if (allSteps[i][j]) {
+          list.push(allSteps[i][j]);
+        }
+      }
+    }
+    return list;
   }
 }

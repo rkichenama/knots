@@ -79,39 +79,20 @@ describe('InterweavedKnot strands', () => {
   });
 });
 
-describe('InterweavedKnot.combinedHalfCycles', () => {
-  it('total length equals sum of all strand halfCycles lengths', () => {
-    const k = new InterweavedKnot({ parts: 4, bights: 6, strands: [{}, {}] });
-    const expected = k.strands.reduce((sum, s) => sum + s.halfCycles.length, 0);
-    expect(k.combinedHalfCycles().length).toBe(expected);
-  });
-
-  it('result is sorted ascending by fromPin', () => {
-    const k = new InterweavedKnot({ parts: 4, bights: 6, strands: [{}, {}] });
-    const cycles = k.combinedHalfCycles();
-    for (let i = 1; i < cycles.length; i++) {
-      expect(cycles[i].fromPin).toBeGreaterThanOrEqual(cycles[i - 1].fromPin);
-    }
-  });
-
-  it('single-strand combinedHalfCycles matches strand halfCycles', () => {
-    const k = new InterweavedKnot({ parts: 5, bights: 6, strands: [{}] });
-    expect(k.combinedHalfCycles().length).toBe(k.strands[0].halfCycles.length);
-  });
-});
 
 describe('InterweavedKnot.combinedHalfCyclesWithStrand', () => {
-  it('length equals sum of all strand halfCycles lengths', () => {
+  it('length equals sum of all strand steps lengths', () => {
     const k = new InterweavedKnot({ parts: 4, bights: 6, strands: [{}, {}] });
-    const expected = k.strands.reduce((sum, s) => sum + s.halfCycles.length, 0);
+    const expected = k.strands.reduce((sum, s) => sum + s.steps().length, 0);
     expect(k.combinedHalfCyclesWithStrand().length).toBe(expected);
   });
 
-  it('each entry has halfCycle and strandIndex', () => {
+  it('each entry has step string and strandIndex', () => {
     const k = new InterweavedKnot({ parts: 4, bights: 6, strands: [{}, {}] });
     const entries = k.combinedHalfCyclesWithStrand();
-    expect(entries[0]).toHaveProperty('halfCycle');
+    expect(entries[0]).toHaveProperty('step');
     expect(entries[0]).toHaveProperty('strandIndex');
+    expect(typeof entries[0].step).toBe('string');
   });
 
   it('strandIndex values are within valid range', () => {
@@ -122,12 +103,9 @@ describe('InterweavedKnot.combinedHalfCyclesWithStrand', () => {
     }
   });
 
-  it('sorted ascending by fromPin', () => {
+  it('interleaves strands by step index: first entry is strand 0', () => {
     const k = new InterweavedKnot({ parts: 4, bights: 6, strands: [{}, {}] });
-    const entries = k.combinedHalfCyclesWithStrand();
-    for (let i = 1; i < entries.length; i++) {
-      expect(entries[i].halfCycle.fromPin).toBeGreaterThanOrEqual(entries[i - 1].halfCycle.fromPin);
-    }
+    expect(k.combinedHalfCyclesWithStrand()[0].strandIndex).toBe(0);
   });
 
   it('single-strand: all strandIndex are 0', () => {
@@ -142,5 +120,12 @@ describe('InterweavedKnot.combinedHalfCyclesWithStrand', () => {
     const indices = new Set(k.combinedHalfCyclesWithStrand().map(e => e.strandIndex));
     expect(indices.has(0)).toBe(true);
     expect(indices.has(1)).toBe(true);
+  });
+
+  it('step strings contain pin info', () => {
+    const k = new InterweavedKnot({ parts: 4, bights: 6, strands: [{}, {}] });
+    for (const { step } of k.combinedHalfCyclesWithStrand()) {
+      expect(step).toMatch(/pin \d+ to/);
+    }
   });
 });
