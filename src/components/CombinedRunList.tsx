@@ -16,23 +16,23 @@ export const CombinedRunList: React.FC<Props> = ({ interweaved }) => {
       <section>
         <h4 className="font-semibold">Tying Order</h4>
         <ol className="list-decimal">
-          {combined.map(({ halfCycle: hc, strandIndex }, i) => {
+          {combined.map(({ step: text, strandIndex }, i) => {
             const prevStrand = i > 0 ? combined[i - 1].strandIndex : strandIndex;
             const switchStrand = i > 0 && strandIndex !== prevStrand;
             const color = interweaved.strandColors[strandIndex];
-            const text = `pin ${hc.fromPin} → pin ${hc.toPin}: ${hc.steps() ?? 'free run'}`;
+            // const text = `pin ${hc.fromPin} → pin ${hc.toPin}: ${hc.steps() ?? 'free run'}`;
             return (
               <React.Fragment key={i}>
                 {switchStrand && (
-                  <li
+                  <div
                     className="list-none px-1 py-0.5 text-xs font-semibold italic border-t"
                     style={{ color, borderColor: color }}
                   >
                     ↳ switch to strand {strandIndex + 1}
-                  </li>
+                  </div>
                 )}
                 <li
-                  className="even:bg-gray-100 odd:bg-gray-200 border-l-2"
+                  className="even:bg-gray-100 odd:bg-gray-200 border-l-2 pl-2"
                   style={{ borderColor: color }}
                   dangerouslySetInnerHTML={{ __html: highlight(text) }}
                 />

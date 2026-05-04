@@ -37,7 +37,7 @@ export const InterweavedDisplay: React.FC<Props> = ({ interweaved }) => {
 
       {activeTab === 0 && (
         <div className="flex flex-col gap-4">
-          <InterweavedDiagram strands={interweaved.strands} colors={interweaved.strandColors} />
+          {/* <InterweavedDiagram strands={interweaved.strands} colors={interweaved.strandColors} /> */}
           <CombinedRunList interweaved={interweaved} />
         </div>
       )}

@@ -28,6 +28,8 @@ export const InterweavedDiagram: React.FC<Props> = ({ strands, colors }) => {
       drawPinsAndGridColored(canvas, strands[i], colors[i]);
       drawOverUndersColored(canvas, strands[i], colors[i]);
     }
+
+    drawBorders(canvas);
   }, [strands, colors]);
 
   return (
@@ -53,6 +55,7 @@ const IndividualStrand: React.FC<{ knot: Knot; color: string; label: string }> =
     clearDrawing(canvas.current, knot, color);
     drawPinsAndGridColored(canvas.current, knot, color);
     drawOverUndersColored(canvas.current, knot, color);
+    drawBorders(canvas.current);
   }, [knot, color]);
 
   return (
@@ -143,4 +146,16 @@ const drawOverUndersColored = (canvas: HTMLCanvasElement, knot: Knot, color: str
       }
     }
   }
+};
+
+const drawBorders = (canvas: HTMLCanvasElement) => {
+  const width = canvas.width;
+  const height = canvas.height;
+  const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
+
+  ctx.fillStyle = 'white';
+  ctx.fillRect(-PAD, -PAD, width, PAD - 8);
+  ctx.fillRect(-PAD, height - (2 * PAD + 8), width, PAD + 8);
+  ctx.fillRect(-PAD, - PAD, PAD, height);
+  ctx.fillRect(width - (2 * PAD), - PAD, PAD, height);
 };
