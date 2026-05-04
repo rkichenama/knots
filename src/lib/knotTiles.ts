@@ -14,16 +14,16 @@ export function knotToGrid(knot: Knot): CellType[][] {
 
   const grid: CellType[][] = Array.from(
     { length: bights },
-    () => Array<CellType>(parts + 1).fill('EMPTY')
+    () => Array<CellType>(parts - 1).fill('EMPTY')
   );
 
   for (let r = 0; r < bights; r++) {
     grid[r][0]     = 'CURVE_LEFT';
-    grid[r][parts] = 'CURVE_RIGHT';
+    grid[r][parts - 1] = 'CURVE_RIGHT';
 
     const isRightward = r % 2 === 0;
 
-    for (let c = 1; c < parts; c++) {
+    for (let c = 1; c < parts - 1; c++) {
       const isBackslash = (coding[c - 1] === '\\') !== sobre;
       if (isRightward) {
         grid[r][c] = isBackslash ? 'CROSS_OVER_R' : 'CROSS_OVER_L';

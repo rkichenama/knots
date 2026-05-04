@@ -27,7 +27,7 @@ export const TileKnotDiagram: React.FC<Props> = ({
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const cols = knot.parts + 1;
+    const cols = knot.parts;
     const rows = knot.bights;
     canvas.width  = cols * cellSize;
     canvas.height = rows * cellSize;
@@ -40,7 +40,7 @@ export const TileKnotDiagram: React.FC<Props> = ({
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     const grid = knotToGrid(knot);
-
+console.log({grid})
     // row 0 = bottom of knot, drawn at bottom of canvas
     for (let r = rows - 1; r >= 0; r--) {
       const visualRow = rows - 1 - r;
@@ -112,8 +112,8 @@ function drawCurveLeft(ctx: CanvasRenderingContext2D, x: number, y: number, size
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
   ctx.beginPath();
-  ctx.moveTo(x + size * 0.5, y + size);
-  ctx.quadraticCurveTo(x - size * 0.4, y + size * 0.5, x + size * 0.5, y);
+  ctx.moveTo(x + size, y + size);
+  ctx.quadraticCurveTo(x, y + size * 0.5, x + size, y);
   ctx.stroke();
   ctx.restore();
 }
@@ -125,8 +125,8 @@ function drawCurveRight(ctx: CanvasRenderingContext2D, x: number, y: number, siz
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
   ctx.beginPath();
-  ctx.moveTo(x + size * 0.5, y + size);
-  ctx.quadraticCurveTo(x + size * 1.4, y + size * 0.5, x + size * 0.5, y);
+  ctx.moveTo(x, y + size);
+  ctx.quadraticCurveTo(x + size, y + size * 0.5, x, y);
   ctx.stroke();
   ctx.restore();
 }

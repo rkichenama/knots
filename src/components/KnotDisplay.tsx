@@ -4,6 +4,7 @@ import { CurrentKnot, KnotError } from '../data/CurrentKnot';
 import { AlgorithmDiagram } from './AlgorithmDiagram';
 import { RunList } from './RunList';
 import { KnotGrid } from './KnotGrid';
+import { TileKnotDiagram } from './TileKnotDiagram';
 
 export const KnotDisplay = () => {
   const knot = CurrentKnot.value;
@@ -14,6 +15,7 @@ export const KnotDisplay = () => {
       <div className='grid grid-cols-2'>
         <AlgorithmDiagram knot={knot} />
         <KnotGrid />
+        <TileKnotDiagram knot={knot} color={'purple'} />
         <div className="col-span-2">
           <RunList knot={knot} />
         </div>
