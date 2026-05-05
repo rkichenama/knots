@@ -4,7 +4,7 @@ import { InterweavedKnot } from '../lib/interweaved-knot';
 import { AlgorithmDiagram } from './AlgorithmDiagram';
 import { RunList } from './RunList';
 import { KnotGrid } from './KnotGrid';
-import { TileKnotDiagram } from './TileKnotDiagram';
+import { PathKnotDiagram } from './PathKnotDiagram';
 
 export const KnotDisplay = () => {
   const knot = CurrentKnot.value;
@@ -19,7 +19,7 @@ export const KnotDisplay = () => {
       <div className='grid grid-cols-2'>
         <AlgorithmDiagram knot={knot} />
         <KnotGrid />
-        <TileKnotDiagram knot={interweaved} strandWidth={14} gapWidth={6} />
+        <PathKnotDiagram knot={interweaved} strandWidth={14} gapWidth={6} />
         <div className='col-span-2'>
           <RunList knot={knot} />
         </div>

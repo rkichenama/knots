@@ -14,7 +14,7 @@ const ResizeContainer = styled.div`
   resize: auto;
 `;
 
-export const TileKnotDiagram: React.FC<Props> = ({ knot, strandWidth, gapWidth }) => {
+export const PathKnotDiagram: React.FC<Props> = ({ knot, strandWidth, gapWidth }) => {
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
 
   React.useEffect(() => {
