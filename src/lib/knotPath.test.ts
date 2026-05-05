@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { pinY, pinX, segmentFromHalfCycle, lineIntersection, buildCrossingRegistry, Segment } from './knotPath';
+import { pinY, pinX, segmentFromHalfCycle, lineIntersection, gridCrossings, Segment } from './knotPath';
 import { InterweavedKnot } from './interweaved-knot';
+import { Knot } from './knot';
 
 describe('pinY', () => {
   it('pin 1 maps to unit/2', () => {
@@ -62,38 +63,40 @@ describe('segmentFromHalfCycle', () => {
   });
 });
 
-describe('buildCrossingRegistry', () => {
-  it('returns a map with entries for each half-cycle that has crossings', () => {
-    const knot = new InterweavedKnot({ parts: 5, bights: 4, strands: [] });
-    const unit = 20;
-    const width = knot.parts * unit;
-    const segments: Segment[] = [];
-    knot.strands.forEach((strand, si) => {
-      strand.halfCycles.forEach((hc, hi) => {
-        segments.push(segmentFromHalfCycle(hc, hi, si, unit, width));
-      });
-    });
-    const registry = buildCrossingRegistry(knot.strands, segments);
-    expect(registry.size).toBeGreaterThan(0);
+describe('gridCrossings', () => {
+  it('returns (parts-1)*bights crossings', () => {
+    const knot = new Knot({ parts: 7, bights: 6 });
+    const crossings = gridCrossings(knot, 20, 10);
+    expect(crossings.length).toBe((7 - 1) * 6);
   });
 
-  it('each crossing has a boolean isOver value', () => {
-    const knot = new InterweavedKnot({ parts: 5, bights: 4, strands: [] });
-    const unit = 20;
-    const width = knot.parts * unit;
-    const segments: Segment[] = [];
-    knot.strands.forEach((strand, si) => {
-      strand.halfCycles.forEach((hc, hi) => {
-        segments.push(segmentFromHalfCycle(hc, hi, si, unit, width));
-      });
-    });
-    const registry = buildCrossingRegistry(knot.strands, segments);
-    registry.forEach(crossings => {
-      crossings.forEach(cp => {
-        expect(typeof cp.isOver).toBe('boolean');
-        expect(typeof cp.coord.x).toBe('number');
-        expect(typeof cp.coord.y).toBe('number');
-      });
-    });
+  it('each crossing has numeric x, y and boolean isOver', () => {
+    const knot = new Knot({ parts: 5, bights: 4 });
+    const crossings = gridCrossings(knot, 20, 10);
+    for (const cp of crossings) {
+      expect(typeof cp.x).toBe('number');
+      expect(typeof cp.y).toBe('number');
+      expect(typeof cp.isOver).toBe('boolean');
+    }
+  });
+
+  it('sobre=true inverts all isOver values vs sobre=false', () => {
+    const knot = new Knot({ parts: 5, bights: 4, sobre: false });
+    const knotSobre = new Knot({ parts: 5, bights: 4, sobre: true });
+    const c1 = gridCrossings(knot, 20, 10);
+    const c2 = gridCrossings(knotSobre, 20, 10);
+    for (let i = 0; i < c1.length; i++) {
+      expect(c2[i].isOver).toBe(!c1[i].isOver);
+    }
+  });
+
+  it('crossing x positions span from margin+cellSize/2 to margin+(parts-2)*cellSize+cellSize/2', () => {
+    const knot = new Knot({ parts: 5, bights: 4 });
+    const cellSize = 20,
+      margin = 10;
+    const crossings = gridCrossings(knot, cellSize, margin);
+    const xs = [...new Set(crossings.map(c => c.x))].sort((a, b) => a - b);
+    expect(xs[0]).toBeCloseTo(margin + cellSize / 2);
+    expect(xs[xs.length - 1]).toBeCloseTo(margin + (knot.parts - 2) * cellSize + cellSize / 2);
   });
 });

@@ -11,14 +11,11 @@ export type Segment = {
   isEdge: boolean;
 };
 
-export type CrossingPoint = {
-  coord: Point;
-  isOver: boolean;
-  otherStrandIndex: number;
-  otherHalfCycleIndex: number;
+export type GridCrossing = {
+  x: number;
+  y: number;
+  isOver: boolean; // true = NW-SE strand goes over NE-SW strand
 };
-
-export type CrossingRegistry = Map<number, CrossingPoint[]>;
 
 // pin is 1-indexed bight number; unit = strandWidth + gapWidth
 export function pinY(pin: number, unit: number): number {
@@ -68,47 +65,33 @@ export function segmentFromHalfCycle(
   return { halfCycleIndex, strandIndex, from, to, isEdge };
 }
 
-// Build a registry of crossing points for all non-edge half-cycles.
-// Returns map keyed by index in the segments array.
-export function buildCrossingRegistry(strands: Knot[], segments: Segment[]): CrossingRegistry {
-  const registry: CrossingRegistry = new Map();
+// Compute all crossing positions and over/under from knot coding.
+// Returns (parts-1)*bights crossings on a regular grid.
+// cellSize: pixels per grid cell; margin: pixels of padding for bight curves.
+// Grid: col 0..(parts-2), row 0..(bights-1).
+// Even rows (0,2,...): NW-SE strand goes right-to-left (fromRight).
+// Odd rows (1,3,...):  NW-SE strand goes left-to-right (fromLeft).
+// isOver: whether the NW-SE diagonal (\) goes over the NE-SW diagonal (/).
+export function gridCrossings(knot: Knot, cellSize: number, margin: number): GridCrossing[] {
+  const { parts, bights, coding, sobre } = knot;
+  const crossings: GridCrossing[] = [];
 
-  for (let i = 0; i < segments.length; i++) {
-    const a = segments[i];
-    if (a.isEdge) continue;
+  for (let row = 0; row < bights; row++) {
+    const fromRight = row % 2 === 0;
+    for (let col = 0; col < parts - 1; col++) {
+      const cx = margin + col * cellSize + cellSize / 2;
+      const cy = margin + row * cellSize + cellSize / 2;
 
-    for (let j = i + 1; j < segments.length; j++) {
-      const b = segments[j];
-      if (b.isEdge) continue;
+      // coding[col] gives the strand direction at this column position.
+      // '\' = backslash = NW-SE strand goes over when fromRight (casa).
+      // sobre inverts the interpretation.
+      const isBackslash = coding[col] === '\\';
+      // In a right-traveling row, backslash = over; left-traveling row inverts.
+      const isOver = fromRight ? isBackslash !== sobre : isBackslash === sobre;
 
-      const pt = lineIntersection(a.from, a.to, b.from, b.to);
-      if (!pt) continue;
-
-      const aHc = strands[a.strandIndex].halfCycles[a.halfCycleIndex];
-
-      const aExisting = registry.get(i) ?? [];
-      const bExisting = registry.get(j) ?? [];
-
-      const aCrossingIdx = aExisting.length;
-      const aIsOver = aCrossingIdx < aHc.runs.length ? aHc.runs[aCrossingIdx] === 'O' : false;
-
-      aExisting.push({
-        coord: pt,
-        isOver: aIsOver,
-        otherStrandIndex: b.strandIndex,
-        otherHalfCycleIndex: b.halfCycleIndex,
-      });
-      bExisting.push({
-        coord: pt,
-        isOver: !aIsOver,
-        otherStrandIndex: a.strandIndex,
-        otherHalfCycleIndex: a.halfCycleIndex,
-      });
-
-      registry.set(i, aExisting);
-      registry.set(j, bExisting);
+      crossings.push({ x: cx, y: cy, isOver });
     }
   }
 
-  return registry;
+  return crossings;
 }

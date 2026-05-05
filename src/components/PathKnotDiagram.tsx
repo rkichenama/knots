@@ -1,7 +1,7 @@
 import * as React from 'react';
 import styled from 'styled-components';
 import { InterweavedKnot } from '../lib/interweaved-knot';
-import { segmentFromHalfCycle, buildCrossingRegistry, Segment } from '../lib/knotPath';
+import { gridCrossings, GridCrossing } from '../lib/knotPath';
 
 type Props = {
   knot: InterweavedKnot;
@@ -21,9 +21,10 @@ export const PathKnotDiagram: React.FC<Props> = ({ knot, strandWidth, gapWidth }
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const unit = strandWidth + gapWidth;
-    const width = knot.parts * unit;
-    const height = knot.bights * 2 * unit;
+    const cellSize = strandWidth + gapWidth;
+    const margin = cellSize;
+    const width = (knot.parts - 1) * cellSize + 2 * margin;
+    const height = knot.bights * cellSize + 2 * margin;
 
     canvas.width = width;
     canvas.height = height;
@@ -31,7 +32,7 @@ export const PathKnotDiagram: React.FC<Props> = ({ knot, strandWidth, gapWidth }
     const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
     ctx.clearRect(0, 0, width, height);
 
-    render(ctx, knot, strandWidth, gapWidth, unit, width, height);
+    render(ctx, knot, strandWidth, gapWidth, cellSize, margin, width, height);
   }, [knot, strandWidth, gapWidth]);
 
   return (
@@ -46,46 +47,22 @@ function render(
   knot: InterweavedKnot,
   strandWidth: number,
   gapWidth: number,
-  unit: number,
+  cellSize: number,
+  margin: number,
   width: number,
   height: number
 ) {
-  const segments: Segment[] = [];
-  knot.strands.forEach((strand, si) => {
-    strand.halfCycles.forEach((hc, hi) => {
-      segments.push(segmentFromHalfCycle(hc, hi, si, unit, width));
-    });
-  });
-
-  const registry = buildCrossingRegistry(knot.strands, segments);
-
   const offscreens = knot.strands.map(() => new OffscreenCanvas(width, height));
 
   knot.strands.forEach((strand, si) => {
     const oc = offscreens[si];
     const octx = oc.getContext('2d') as OffscreenCanvasRenderingContext2D;
     const color = knot.strandColors[si];
+    const crossings = gridCrossings(strand, cellSize, margin);
 
-    strand.halfCycles.forEach((hc, hi) => {
-      const segIndex = segments.findIndex(s => s.strandIndex === si && s.halfCycleIndex === hi);
-      const seg = segments[segIndex];
-
-      if (seg.isEdge) {
-        drawCurve(octx, seg, unit, strandWidth, gapWidth, color);
-      } else {
-        drawDiagonal(octx, seg, strandWidth, color);
-      }
-    });
-
-    strand.halfCycles.forEach((_hc, hi) => {
-      const segIndex = segments.findIndex(s => s.strandIndex === si && s.halfCycleIndex === hi);
-      const crossings = registry.get(segIndex) ?? [];
-      crossings.forEach(cp => {
-        if (!cp.isOver) {
-          punchGap(octx, cp.coord, gapWidth);
-        }
-      });
-    });
+    drawStrands(octx, strand.parts, strand.bights, cellSize, margin, strandWidth, color);
+    drawBightCurves(octx, strand.parts, strand.bights, cellSize, margin, strandWidth, color);
+    punchCrossingGaps(octx, crossings, strandWidth, gapWidth);
   });
 
   knot.strands.forEach((_strand, si) => {
@@ -93,58 +70,124 @@ function render(
   });
 }
 
-function drawDiagonal(ctx: OffscreenCanvasRenderingContext2D, seg: Segment, strandWidth: number, color: string) {
+// Draw diagonal strand segments for each bight row.
+// Each row has two sets of diagonals crossing at (parts-1) grid cells:
+//   NW-SE (\) strand and NE-SW (/) strand.
+// Both span the full interior width (margin to margin+(parts-1)*cellSize).
+function drawStrands(
+  ctx: OffscreenCanvasRenderingContext2D,
+  parts: number,
+  bights: number,
+  cellSize: number,
+  margin: number,
+  strandWidth: number,
+  color: string
+) {
+  const xLeft = margin;
+  const xRight = margin + (parts - 1) * cellSize;
+
   ctx.save();
   ctx.strokeStyle = color;
   ctx.lineWidth = strandWidth;
   ctx.lineCap = 'butt';
-  ctx.beginPath();
-  ctx.moveTo(seg.from.x, seg.from.y);
-  ctx.lineTo(seg.to.x, seg.to.y);
-  ctx.stroke();
+
+  for (let row = 0; row < bights; row++) {
+    const yTop = margin + row * cellSize;
+    const yBot = margin + (row + 1) * cellSize;
+
+    // NW-SE (\): top-left to bottom-right
+    ctx.beginPath();
+    ctx.moveTo(xLeft, yTop);
+    ctx.lineTo(xRight, yBot);
+    ctx.stroke();
+
+    // NE-SW (/): bottom-left to top-right
+    ctx.beginPath();
+    ctx.moveTo(xLeft, yBot);
+    ctx.lineTo(xRight, yTop);
+    ctx.stroke();
+  }
+
   ctx.restore();
 }
 
-function drawCurve(
+// Draw bight curves at left/right edges connecting adjacent row endpoints.
+// Each pair of vertically adjacent rows shares an edge point — the bight curve
+// is a small semicircle connecting the exit of one row to the entry of the next.
+// Left edge bights: connect row N bottom-left to row N+1 top-left.
+// Right edge bights: connect row N top-right to row N+1 bottom-right (or vice-versa).
+function drawBightCurves(
   ctx: OffscreenCanvasRenderingContext2D,
-  seg: Segment,
-  unit: number,
+  parts: number,
+  bights: number,
+  cellSize: number,
+  margin: number,
   strandWidth: number,
-  gapWidth: number,
   color: string
 ) {
-  const arcRadius = unit;
-  const innerRadius = arcRadius - gapWidth / 2;
-  const outerRadius = arcRadius + gapWidth / 2;
-
-  const cx = seg.from.x;
-  const cy = (seg.from.y + seg.to.y) / 2;
-
-  const isLeft = cx === 0;
-  const startAngle = isLeft ? -Math.PI / 2 : Math.PI / 2;
-  const endAngle = isLeft ? Math.PI / 2 : -Math.PI / 2;
-  const anticlockwise = !isLeft;
+  const xLeft = margin;
+  const xRight = margin + (parts - 1) * cellSize;
+  const r = cellSize / 2;
 
   ctx.save();
   ctx.strokeStyle = color;
-  ctx.lineWidth = strandWidth / 3;
+  ctx.lineWidth = strandWidth;
   ctx.lineCap = 'round';
 
+  for (let row = 0; row < bights - 1; row++) {
+    const yShared = margin + (row + 1) * cellSize;
+
+    // Left edge: NW-SE row goes top-left→bottom-right, exits at (xLeft, yBot).
+    // Next row's NE-SW enters at (xLeft, yBot). They share the left edge point.
+    // Bight curve: semicircle curving left of xLeft connecting the two.
+    ctx.beginPath();
+    ctx.arc(xLeft, yShared, r, Math.PI / 2, -Math.PI / 2, true); // curves to the left
+    ctx.stroke();
+
+    // Right edge: same logic, curves to the right.
+    ctx.beginPath();
+    ctx.arc(xRight, yShared, r, -Math.PI / 2, Math.PI / 2, false); // curves to the right
+    ctx.stroke();
+  }
+
+  // Top-left and bottom-left bight curves (first and last row endpoints)
   ctx.beginPath();
-  ctx.arc(cx, cy, innerRadius, startAngle, endAngle, anticlockwise);
+  ctx.arc(xLeft, margin, r, Math.PI / 2, -Math.PI / 2, true);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(xLeft, margin + bights * cellSize, r, Math.PI / 2, -Math.PI / 2, true);
   ctx.stroke();
 
+  // Top-right and bottom-right
   ctx.beginPath();
-  ctx.arc(cx, cy, outerRadius, startAngle, endAngle, anticlockwise);
+  ctx.arc(xRight, margin, r, -Math.PI / 2, Math.PI / 2, false);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(xRight, margin + bights * cellSize, r, -Math.PI / 2, Math.PI / 2, false);
   ctx.stroke();
 
   ctx.restore();
 }
 
-function punchGap(ctx: OffscreenCanvasRenderingContext2D, coord: { x: number; y: number }, gapWidth: number) {
-  const half = gapWidth;
+// Punch gaps at under-crossing points along the under-strand direction.
+function punchCrossingGaps(
+  ctx: OffscreenCanvasRenderingContext2D,
+  crossings: GridCrossing[],
+  strandWidth: number,
+  gapWidth: number
+) {
   ctx.save();
   ctx.globalCompositeOperation = 'destination-out';
-  ctx.fillRect(coord.x - half, coord.y - half, half * 2, half * 2);
+
+  for (const cp of crossings) {
+    ctx.save();
+    ctx.translate(cp.x, cp.y);
+    // isOver=true: NW-SE (\) is over, punch gap along NE-SW (/) direction = rotate -45°
+    // isOver=false: NE-SW (/) is over, punch gap along NW-SE (\) direction = rotate +45°
+    ctx.rotate(cp.isOver ? -Math.PI / 4 : Math.PI / 4);
+    ctx.fillRect(-gapWidth, -strandWidth / 2 - 1, gapWidth * 2, strandWidth + 2);
+    ctx.restore();
+  }
+
   ctx.restore();
 }
