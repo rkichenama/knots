@@ -11,12 +11,14 @@ export const KnotDisplay = () => {
 
   return (
     <>
-      <h3 className="text-center">{knot.bights}B x {knot.parts}P {knot.sobre ? 'sobre' : 'casa'} knot</h3>
+      <h3 className='text-center'>
+        {knot.bights}B x {knot.parts}P {knot.sobre ? 'sobre' : 'casa'} knot
+      </h3>
       <div className='grid grid-cols-2'>
         <AlgorithmDiagram knot={knot} />
         <KnotGrid />
-        <TileKnotDiagram knot={knot} color={'purple'} />
-        <div className="col-span-2">
+        <TileKnotDiagram />
+        <div className='col-span-2'>
           <RunList knot={knot} />
         </div>
       </div>
