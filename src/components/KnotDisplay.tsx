@@ -1,6 +1,6 @@
 import * as React from 'react';
-import styled from 'styled-components';
-import { CurrentKnot, KnotError } from '../data/CurrentKnot';
+import { CurrentKnot, CurrentInterweaved } from '../data/CurrentKnot';
+import { InterweavedKnot } from '../lib/interweaved-knot';
 import { AlgorithmDiagram } from './AlgorithmDiagram';
 import { RunList } from './RunList';
 import { KnotGrid } from './KnotGrid';
@@ -8,6 +8,8 @@ import { TileKnotDiagram } from './TileKnotDiagram';
 
 export const KnotDisplay = () => {
   const knot = CurrentKnot.value;
+  const interweaved =
+    CurrentInterweaved.value ?? new InterweavedKnot({ parts: knot.parts, bights: knot.bights, strands: [] });
 
   return (
     <>
@@ -17,7 +19,7 @@ export const KnotDisplay = () => {
       <div className='grid grid-cols-2'>
         <AlgorithmDiagram knot={knot} />
         <KnotGrid />
-        <TileKnotDiagram />
+        <TileKnotDiagram knot={interweaved} strandWidth={14} gapWidth={6} />
         <div className='col-span-2'>
           <RunList knot={knot} />
         </div>
