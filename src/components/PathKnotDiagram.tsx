@@ -111,11 +111,9 @@ function drawStrands(
   ctx.restore();
 }
 
-// Draw bight curves at left/right edges connecting adjacent row endpoints.
-// Each pair of vertically adjacent rows shares an edge point — the bight curve
-// is a small semicircle connecting the exit of one row to the entry of the next.
-// Left edge bights: connect row N bottom-left to row N+1 top-left.
-// Right edge bights: connect row N top-right to row N+1 bottom-right (or vice-versa).
+// Draw bight curves at left/right edges.
+// Each row has one semicircular bight at each edge, centered at the row's mid-cell y.
+// The arc spans from the row's top y to its bottom y, curving outward past the edge.
 function drawBightCurves(
   ctx: OffscreenCanvasRenderingContext2D,
   parts: number,
@@ -134,37 +132,19 @@ function drawBightCurves(
   ctx.lineWidth = strandWidth;
   ctx.lineCap = 'round';
 
-  for (let row = 0; row < bights - 1; row++) {
-    const yShared = margin + (row + 1) * cellSize;
+  for (let row = 0; row < bights; row++) {
+    const yMid = margin + row * cellSize + r;
 
-    // Left edge: NW-SE row goes top-left→bottom-right, exits at (xLeft, yBot).
-    // Next row's NE-SW enters at (xLeft, yBot). They share the left edge point.
-    // Bight curve: semicircle curving left of xLeft connecting the two.
+    // Left edge: semicircle curving left (anticlockwise from bottom to top).
     ctx.beginPath();
-    ctx.arc(xLeft, yShared, r, Math.PI / 2, -Math.PI / 2, true); // curves to the left
+    ctx.arc(xLeft, yMid, r, Math.PI / 2, -Math.PI / 2, true);
     ctx.stroke();
 
-    // Right edge: same logic, curves to the right.
+    // Right edge: semicircle curving right (clockwise from top to bottom).
     ctx.beginPath();
-    ctx.arc(xRight, yShared, r, -Math.PI / 2, Math.PI / 2, false); // curves to the right
+    ctx.arc(xRight, yMid, r, -Math.PI / 2, Math.PI / 2, false);
     ctx.stroke();
   }
-
-  // Top-left and bottom-left bight curves (first and last row endpoints)
-  ctx.beginPath();
-  ctx.arc(xLeft, margin, r, Math.PI / 2, -Math.PI / 2, true);
-  ctx.stroke();
-  ctx.beginPath();
-  ctx.arc(xLeft, margin + bights * cellSize, r, Math.PI / 2, -Math.PI / 2, true);
-  ctx.stroke();
-
-  // Top-right and bottom-right
-  ctx.beginPath();
-  ctx.arc(xRight, margin, r, -Math.PI / 2, Math.PI / 2, false);
-  ctx.stroke();
-  ctx.beginPath();
-  ctx.arc(xRight, margin + bights * cellSize, r, -Math.PI / 2, Math.PI / 2, false);
-  ctx.stroke();
 
   ctx.restore();
 }
