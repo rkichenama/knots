@@ -15,6 +15,12 @@ const ResizeContainer = styled.div`
   resize: auto;
 `;
 
+const Canvas = styled.canvas`
+  position: relative;
+  height: 100%;
+  width: 100%;
+`;
+
 export const PathKnotDiagram: React.FC<Props> = ({ knot, strandWidth, gapWidth }) => {
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
 
@@ -38,7 +44,7 @@ export const PathKnotDiagram: React.FC<Props> = ({ knot, strandWidth, gapWidth }
 
   return (
     <ResizeContainer>
-      <canvas ref={canvasRef} style={{ display: 'block' }} />
+      <Canvas ref={canvasRef} />
     </ResizeContainer>
   );
 };
