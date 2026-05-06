@@ -15,6 +15,12 @@ const ResizeContainer = styled.div`
   resize: auto;
 `;
 
+const Canvas = styled.canvas`
+  position: relative;
+  height: 100%;
+  width: 100%;
+`;
+
 export const PathKnotDiagram: React.FC<Props> = ({ knot, strandWidth, gapWidth }) => {
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
 
@@ -38,7 +44,7 @@ export const PathKnotDiagram: React.FC<Props> = ({ knot, strandWidth, gapWidth }
 
   return (
     <ResizeContainer>
-      <canvas ref={canvasRef} style={{ display: 'block' }} />
+      <Canvas ref={canvasRef} />
     </ResizeContainer>
   );
 };
@@ -53,34 +59,42 @@ function render(
   width: number,
   height: number
 ) {
-  const offscreens = knot.strands.map(() => new OffscreenCanvas(width, height));
-
+  // Two layers per strand: \ diagonals + left bights, / diagonals + right bights.
+  // Separating them lets punchGaps erase only the under-direction without touching the over-direction.
   knot.strands.forEach((strand, si) => {
-    const oc = offscreens[si];
-    const octx = oc.getContext('2d') as OffscreenCanvasRenderingContext2D;
     const color = knot.strandColors[si];
     const crossings = gridCrossings(strand, cellSize, margin);
+    const overSlash = crossings.filter(c => c.isOver); // \ over: punch / layer
+    const overBackslash = crossings.filter(c => !c.isOver); // / over: punch \ layer
 
-    drawStrands(octx, strand, cellSize, margin, strandWidth, color);
-    drawBightCurves(octx, strand, cellSize, margin, strandWidth, color);
-    punchCrossingGaps(octx, crossings, strandWidth, gapWidth);
-  });
+    const bsCanvas = new OffscreenCanvas(width, height);
+    const bsCtx = bsCanvas.getContext('2d') as OffscreenCanvasRenderingContext2D;
+    drawDiagonals(bsCtx, strand, cellSize, margin, strandWidth, color, true);
+    drawEdgeBights(bsCtx, strand, cellSize, margin, strandWidth, color, true);
+    punchGaps(bsCtx, overSlash, strandWidth, gapWidth, true);
 
-  knot.strands.forEach((_strand, si) => {
-    ctx.drawImage(offscreens[si], 0, 0);
+    const slCanvas = new OffscreenCanvas(width, height);
+    const slCtx = slCanvas.getContext('2d') as OffscreenCanvasRenderingContext2D;
+    drawDiagonals(slCtx, strand, cellSize, margin, strandWidth, color, false);
+    drawEdgeBights(slCtx, strand, cellSize, margin, strandWidth, color, false);
+    punchGaps(slCtx, overBackslash, strandWidth, gapWidth, false);
+
+    ctx.drawImage(bsCanvas, 0, 0);
+    ctx.drawImage(slCanvas, 0, 0);
   });
 }
 
-// Draw uniform diagonal grid: each bight row has two diagonals spanning full interior width.
-// Row r: \ from (xLeft, margin+r*cellSize) to (xRight, margin+(r+1)*cellSize)
-//         / from (xLeft, margin+(r+1)*cellSize) to (xRight, margin+r*cellSize)
-function drawStrands(
+// Draw either \ or / diagonals across all bight rows.
+// isBackslash=true: row r → (xLeft,yTop)→(xRight,yBot)
+// isBackslash=false: row r → (xLeft,yBot)→(xRight,yTop)
+function drawDiagonals(
   ctx: OffscreenCanvasRenderingContext2D,
   strand: Knot,
   cellSize: number,
   margin: number,
   strandWidth: number,
-  color: string
+  color: string,
+  isBackslash: boolean
 ) {
   const xLeft = margin;
   const xRight = margin + (strand.parts - 1) * cellSize;
@@ -93,32 +107,30 @@ function drawStrands(
   for (let row = 0; row < strand.bights; row++) {
     const yTop = margin + row * cellSize;
     const yBot = margin + (row + 1) * cellSize;
-
     ctx.beginPath();
-    ctx.moveTo(xLeft, yTop);
-    ctx.lineTo(xRight, yBot);
-    ctx.stroke();
-
-    ctx.beginPath();
-    ctx.moveTo(xLeft, yBot);
-    ctx.lineTo(xRight, yTop);
+    if (isBackslash) {
+      ctx.moveTo(xLeft, yTop);
+      ctx.lineTo(xRight, yBot);
+    } else {
+      ctx.moveTo(xLeft, yBot);
+      ctx.lineTo(xRight, yTop);
+    }
     ctx.stroke();
   }
 
   ctx.restore();
 }
 
-// Bight curves at left/right edges.
-// Each row has one semicircle at each edge, centered at mid-cell y, curving outward.
-// Left: clockwise arc (API) from bottom→left→top.
-// Right: clockwise arc from top→right→bottom.
-function drawBightCurves(
+// Draw edge bight semicircles for one layer.
+// \ layer gets left bights; / layer gets right bights.
+function drawEdgeBights(
   ctx: OffscreenCanvasRenderingContext2D,
   strand: Knot,
   cellSize: number,
   margin: number,
   strandWidth: number,
-  color: string
+  color: string,
+  isBackslash: boolean
 ) {
   const xLeft = margin;
   const xRight = margin + (strand.parts - 1) * cellSize;
@@ -131,28 +143,29 @@ function drawBightCurves(
 
   for (let row = 0; row < strand.bights; row++) {
     const yMid = margin + row * cellSize + r;
-
     ctx.beginPath();
-    ctx.arc(xLeft, yMid, r, Math.PI / 2, -Math.PI / 2, false);
-    ctx.stroke();
-
-    ctx.beginPath();
-    ctx.arc(xRight, yMid, r, -Math.PI / 2, Math.PI / 2, false);
+    if (isBackslash) {
+      // Left bight: clockwise (API) from bottom→left→top.
+      ctx.arc(xLeft, yMid, r, Math.PI / 2, -Math.PI / 2, false);
+    } else {
+      // Right bight: clockwise from top→right→bottom.
+      ctx.arc(xRight, yMid, r, -Math.PI / 2, Math.PI / 2, false);
+    }
     ctx.stroke();
   }
 
   ctx.restore();
 }
 
-// Punch gaps at under-crossing points.
-// After rotate: x-axis aligns with under-strand direction; fillRect cuts across it.
-// isOver=true: \ over → punch / under → rotate -45° (x→NE = / direction)
-// isOver=false: / over → punch \ under → rotate +45° (x→SE = \ direction)
-function punchCrossingGaps(
+// Punch gaps into the under-strand layer using destination-out.
+// isBackslashLayer: the layer being punched contains \ lines.
+// Punch orientation aligns with the layer's diagonal direction.
+function punchGaps(
   ctx: OffscreenCanvasRenderingContext2D,
   crossings: GridCrossing[],
   strandWidth: number,
-  gapWidth: number
+  gapWidth: number,
+  isBackslashLayer: boolean
 ) {
   ctx.save();
   ctx.globalCompositeOperation = 'destination-out';
@@ -160,7 +173,10 @@ function punchCrossingGaps(
   for (const cp of crossings) {
     ctx.save();
     ctx.translate(cp.x, cp.y);
-    ctx.rotate(cp.isOver ? -Math.PI / 4 : Math.PI / 4);
+    // Align x-axis with the layer's strand direction, then cut across it (y-axis = gap width).
+    // \ layer (isBackslashLayer=true): rotate +45° → x→SE = \ direction.
+    // / layer (isBackslashLayer=false): rotate -45° → x→NE = / direction.
+    ctx.rotate(isBackslashLayer ? Math.PI / 4 : -Math.PI / 4);
     ctx.fillRect(-strandWidth / 2 - 1, -gapWidth, strandWidth + 2, gapWidth * 2);
     ctx.restore();
   }
