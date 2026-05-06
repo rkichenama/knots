@@ -14,11 +14,15 @@ const Container = styled.div`
   width: 100%;
   border: 1px solid #ccc;
   background: #fff;
-  overflow: auto;
+
+  overflow: hidden;
+  resize: auto;
 `;
 
 const Canvas = styled.canvas`
   display: block;
+  width: 100%;
+  height: 100%;
 `;
 
 type FullLine = {
@@ -46,9 +50,31 @@ export const TyingKnotDiagram: React.FC<Props> = ({ knot, strandWidth, gapWidth 
 
     canvas.width = width;
     canvas.height = height;
-    
+
+    // 6. UI Overlay
+    ctx.strokeStyle = '#e63946';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([5, 5]);
+    ctx.strokeRect(margin, margin + sectionHeight, mandrelWidth, sectionHeight);
+    ctx.setLineDash([]);
+
+    ctx.fillStyle = '#666';
+    ctx.font = '10px sans-serif';
+    ctx.textAlign = 'right';
+    for (let section = 0; section < 3; section++) {
+        for (let b = 1; b <= knot.bights; b++) {
+            const y = margin + (2 - section) * sectionHeight + (knot.bights - b) * cellSize + cellSize / 2;
+            ctx.fillText(b.toString(), margin - 8, y + 4);
+            ctx.textAlign = 'left';
+            ctx.fillText(b.toString(), width - margin + 8, y + 4);
+            ctx.textAlign = 'right';
+        }
+    }
+
+    return;
+
     // 1. Generate all paths for all strands
-    const allPaths = knot.strands.map(strand => 
+    const allPaths = knot.strands.map(strand =>
         traceStrandPath(strand, knot.parts, knot.bights, cellSize, margin)
     );
 
@@ -63,7 +89,7 @@ export const TyingKnotDiagram: React.FC<Props> = ({ knot, strandWidth, gapWidth 
                 const p2 = path[i+1];
                 const from: Point = { x: p1.x, y: p1.y + offset };
                 const to: Point = { x: p2.x, y: p2.y + offset };
-                
+
                 // Only keep lines that are at least partially within the 3x mandrel area
                 if (Math.max(from.y, to.y) < margin || Math.min(from.y, to.y) > height - margin) continue;
 
@@ -128,11 +154,11 @@ export const TyingKnotDiagram: React.FC<Props> = ({ knot, strandWidth, gapWidth 
             ctx.strokeStyle = knot.strandColors[line.strandIndex];
             ctx.lineWidth = strandWidth;
             ctx.lineCap = 'butt';
-            
+
             // Clip ends for bights
             const start = along(line.from, line.to, cellSize / 2);
             const end = along(line.to, line.from, cellSize / 2);
-            
+
             ctx.moveTo(start.x, start.y);
             ctx.lineTo(end.x, end.y);
             ctx.stroke();
@@ -198,11 +224,11 @@ export const TyingKnotDiagram: React.FC<Props> = ({ knot, strandWidth, gapWidth 
             for (let i = 0; i < path.length - 1; i++) {
                 const p1 = { x: path[i].x, y: path[i].y + offset };
                 const p2 = { x: path[i+1].x, y: path[i+1].y + offset };
-                
+
                 // Draw arc at start of half-cycle (pin)
                 const isLeft = p1.x === margin;
                 const r = cellSize / 2;
-                
+
                 // We need the PREVIOUS line to draw the arc correctly
                 // Simplified: just draw circles at pins for now, or arcs if possible
                 ctx.beginPath();
@@ -212,25 +238,6 @@ export const TyingKnotDiagram: React.FC<Props> = ({ knot, strandWidth, gapWidth 
         });
     });
 
-    // 6. UI Overlay
-    ctx.strokeStyle = '#e63946';
-    ctx.lineWidth = 2;
-    ctx.setLineDash([5, 5]);
-    ctx.strokeRect(margin, margin + sectionHeight, mandrelWidth, sectionHeight);
-    ctx.setLineDash([]);
-
-    ctx.fillStyle = '#666';
-    ctx.font = '10px sans-serif';
-    ctx.textAlign = 'right';
-    for (let section = 0; section < 3; section++) {
-        for (let b = 1; b <= knot.bights; b++) {
-            const y = margin + (2 - section) * sectionHeight + (knot.bights - b) * cellSize + cellSize / 2;
-            ctx.fillText(b.toString(), margin - 8, y + 4);
-            ctx.textAlign = 'left';
-            ctx.fillText(b.toString(), width - margin + 8, y + 4);
-            ctx.textAlign = 'right';
-        }
-    }
 
   }, [knot, strandWidth, gapWidth]);
 

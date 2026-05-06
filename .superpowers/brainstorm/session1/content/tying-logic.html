@@ -1,0 +1,91 @@
+<h2>Tying Diagram Architecture</h2>
+<p class="subtitle">3x repetition and path mirroring logic</p>
+
+<div class="mockup">
+  <div class="mockup-header">Mandrel Unrolling (3x Bights)</div>
+  <div class="mockup-body" style="background: #111; padding: 10px; border-radius: 8px; overflow: hidden;">
+    <div style="display: flex; position: relative; height: 450px;">
+      
+      <!-- Left Pins (Repeating) -->
+      <div style="display: flex; flex-direction: column; justify-content: space-between; height: 100%; width: 40px; border-right: 1px solid #333;">
+        <!-- Top Block (B..1) -->
+        <div style="display: flex; flex-direction: column-reverse; height: 33.3%; justify-content: space-around; background: rgba(255,255,255,0.05);">
+           <div class="label" style="text-align: center; color: #555;">B</div>
+           <div class="label" style="text-align: center; color: #555;">...</div>
+           <div class="label" style="text-align: center; color: #555;">1</div>
+        </div>
+        <!-- Center Block (B..1) -->
+        <div style="display: flex; flex-direction: column-reverse; height: 33.3%; justify-content: space-around; background: rgba(230, 57, 70, 0.1); border: 1px solid rgba(230, 57, 70, 0.3);">
+           <div class="label" style="text-align: center; color: #fff;">B</div>
+           <div class="label" style="text-align: center; color: #fff;">...</div>
+           <div class="label" style="text-align: center; color: #fff;">1</div>
+        </div>
+        <!-- Bottom Block (B..1) -->
+        <div style="display: flex; flex-direction: column-reverse; height: 33.3%; justify-content: space-around; background: rgba(255,255,255,0.05);">
+           <div class="label" style="text-align: center; color: #555;">B</div>
+           <div class="label" style="text-align: center; color: #555;">...</div>
+           <div class="label" style="text-align: center; color: #555;">1</div>
+        </div>
+      </div>
+
+      <!-- Path Canvas Area -->
+      <div style="flex-grow: 1; position: relative;">
+        <!-- Example Path Line -->
+        <svg width="100%" height="100%" style="position: absolute; top: 0; left: 0;">
+          <!-- Path starting in center window, going up to top window -->
+          <line x1="0" y1="250" x2="100%" y2="100" stroke="#e63946" stroke-width="3" stroke-dasharray="5,5" />
+          <circle cx="0" cy="250" r="4" fill="#e63946" />
+          <circle cx="100%" cy="100" r="4" fill="#457b9d" />
+          
+          <!-- Mirrors -->
+          <line x1="0" y1="100" x2="100%" y2="-50" stroke="rgba(230, 57, 70, 0.2)" stroke-width="2" />
+          <line x1="0" y1="400" x2="100%" y2="250" stroke="rgba(230, 57, 70, 0.2)" stroke-width="2" />
+        </svg>
+        
+        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: none;">
+          <div class="label" style="color: rgba(230, 57, 70, 0.5); font-size: 20px; border: 2px dashed rgba(230, 57, 70, 0.5); padding: 10px;">ACTIVE WINDOW</div>
+        </div>
+      </div>
+
+      <!-- Right Pins (Repeating + Offset) -->
+      <div style="display: flex; flex-direction: column; justify-content: space-between; height: 100%; width: 40px; border-left: 1px solid #333; transform: translateY(-20px);">
+         <div style="display: flex; flex-direction: column-reverse; height: 33.3%; justify-content: space-around; background: rgba(255,255,255,0.05);">
+           <div class="label" style="text-align: center; color: #555;">B</div>
+           <div class="label" style="text-align: center; color: #555;">...</div>
+           <div class="label" style="text-align: center; color: #555;">1</div>
+        </div>
+        <div style="display: flex; flex-direction: column-reverse; height: 33.3%; justify-content: space-around; background: rgba(69, 123, 157, 0.1); border: 1px solid rgba(69, 123, 157, 0.3);">
+           <div class="label" style="text-align: center; color: #fff;">B</div>
+           <div class="label" style="text-align: center; color: #fff;">...</div>
+           <div class="label" style="text-align: center; color: #fff;">1</div>
+        </div>
+        <div style="display: flex; flex-direction: column-reverse; height: 33.3%; justify-content: space-around; background: rgba(255,255,255,0.05);">
+           <div class="label" style="text-align: center; color: #555;">B</div>
+           <div class="label" style="text-align: center; color: #555;">...</div>
+           <div class="label" style="text-align: center; color: #555;">1</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Implementation Approach Selection</h3>
+  <div class="options">
+    <div class="option" data-choice="cumulative-plotting" onclick="toggleSelect(this)">
+      <div class="letter">A</div>
+      <div class="content">
+        <h3>Cumulative Path Plotting</h3>
+        <p>Plot the strand's full sequence of runs as a continuous 2D path. When it crosses a boundary, it physically moves into the "Extra" blocks. We then render these paths in all 3 blocks (mirrored) so the "active window" always shows the full crossing logic.</p>
+      </div>
+    </div>
+    <div class="option" data-choice="static-grid" onclick="toggleSelect(this)">
+      <div class="letter">B</div>
+      <div class="content">
+        <h3>Static Grid with Jump-Backs</h3>
+        <p>Plot only within the window and use visual "jump-back" lines to show where the strand reconnects. (Less elegant for a tying guide).</p>
+      </div>
+    </div>
+  </div>
+</div>
