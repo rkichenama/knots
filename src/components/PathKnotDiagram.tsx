@@ -135,9 +135,9 @@ function drawBightCurves(
   for (let row = 0; row < bights; row++) {
     const yMid = margin + row * cellSize + r;
 
-    // Left edge: semicircle curving left (anticlockwise from bottom to top).
+    // Left edge: clockwise (API) from bottom→left→top = curves outward left.
     ctx.beginPath();
-    ctx.arc(xLeft, yMid, r, Math.PI / 2, -Math.PI / 2, true);
+    ctx.arc(xLeft, yMid, r, Math.PI / 2, -Math.PI / 2, false);
     ctx.stroke();
 
     // Right edge: semicircle curving right (clockwise from top to bottom).
@@ -164,8 +164,12 @@ function punchCrossingGaps(
     ctx.translate(cp.x, cp.y);
     // isOver=true: NW-SE (\) is over, punch gap along NE-SW (/) direction = rotate -45°
     // isOver=false: NE-SW (/) is over, punch gap along NW-SE (\) direction = rotate +45°
+    // Rotate so x-axis aligns with the under-strand direction, then punch across it.
+    // isOver=true: \ over, punch / under → rotate -45° (x-axis → NE = / direction)
+    // isOver=false: / over, punch \ under → rotate +45° (x-axis → SE = \ direction)
     ctx.rotate(cp.isOver ? -Math.PI / 4 : Math.PI / 4);
-    ctx.fillRect(-gapWidth, -strandWidth / 2 - 1, gapWidth * 2, strandWidth + 2);
+    // Width (along strand) covers the crossing zone; height (across strand) erases it.
+    ctx.fillRect(-strandWidth / 2 - 1, -gapWidth, strandWidth + 2, gapWidth * 2);
     ctx.restore();
   }
 
