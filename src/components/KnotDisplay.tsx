@@ -6,6 +6,7 @@ import { RunList } from './RunList';
 import { KnotGrid } from './KnotGrid';
 import { PathKnotDiagram } from './PathKnotDiagram';
 import { TyingKnotDiagram } from './TyingKnotDiagram';
+import { OpenTyingKnotDiagram } from './OpenTyingKnotDiagram';
 
 export const KnotDisplay = () => {
   const knot = CurrentKnot.value;
@@ -22,6 +23,7 @@ export const KnotDisplay = () => {
         <KnotGrid />
         {/* <PathKnotDiagram knot={interweaved} strandWidth={14} gapWidth={6} /> */}
         {/* <TyingKnotDiagram knot={interweaved} strandWidth={14} gapWidth={6} /> */}
+        {/* <OpenTyingKnotDiagram knot={interweaved} strandWidth={14} gapWidth={6} /> */}
         <div className='col-span-2'>
           <RunList knot={knot} />
         </div>

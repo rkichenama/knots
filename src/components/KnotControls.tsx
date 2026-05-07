@@ -3,6 +3,7 @@ import { InterweavedKnot, Knot, KnotProps, StrandProps } from '../lib';
 import gcd from '../lib/gcd';
 import { CurrentInterweaved, CurrentKnot, KnotError, StrandCount } from '../data/CurrentKnot';
 import { StrandConfigPanel } from './StrandConfigPanel';
+import styled from 'styled-components';
 
 let defaultKnot = {
   bights: 6,
@@ -24,6 +25,54 @@ let defaultKnot = {
     }
   }
 })();
+
+const Switch = styled.label`
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 24px;
+`;
+
+const Input = styled.input`
+  opacity: 0;
+  width: 0;
+  height: 0;
+
+  // When checked, change the background of the slider sibling
+  &:checked + span {
+    background-color: #2196f3;
+  }
+
+  // When checked, move the circle inside the slider
+  &:checked + span:before {
+    transform: translateX(26px);
+  }
+`;
+
+const Slider = styled.span`
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: 0.4s;
+  border-radius: 34px;
+
+  &:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 4px;
+    bottom: 3px;
+    background-color: white;
+    transition: 0.4s;
+    border-radius: 50%;
+  }
+`;
+
 
 export const KnotControls: React.FC<any> = () => {
   const [{
@@ -137,10 +186,13 @@ export const KnotControls: React.FC<any> = () => {
               Pattern
               <input className="text-center border" type='text' value={pattern} onChange={(e) => change('pattern', e)}/>
             </label>
-            <label className="flex justify-center items-center col-span-2">
-              Sobre
-              <input type='checkbox' checked={sobre} onChange={(e) => change('sobre', e)}/>
-            </label>
+            <span className="flex justify-center items-center col-span-2">
+              Sobre&nbsp;
+              <Switch>
+                <Input type="checkbox" checked={sobre} onChange={(e) => change('sobre', e)} />
+                <Slider />
+              </Switch>
+            </span>
           </>
         )}
       </div>

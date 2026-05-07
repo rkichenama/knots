@@ -84,10 +84,10 @@ const drawPinsAndGrid = (canvas: HTMLCanvasElement, knot: Knot) => {
     ctx.lineWidth = 1;
     for (let x = 0; x < Math.ceil(across); x++) {
       if (x === 0) {
-        ctx.fillText(`${pin  + 1}`,
+        ctx.fillText(`${(pin % knot.bights)  + 1}`,
           x + 15, height - ((pin * deltaY) - 3));
 
-        ctx.fillText(`${pin + 1}`,
+        ctx.fillText(`${(pin % knot.bights) + 1}`,
           (across * deltaX) - 15, height - (((pin + (isOddParts * 0.5)) * deltaY) - 3));
       }
       // <
@@ -136,33 +136,39 @@ const drawOverUnders = (canvas: HTMLCanvasElement, knot: Knot) => {
   const across = knot.parts / 2;
   const isOddParts = knot.parts % 2;
 
-  const w = (0.2 * deltaX);
-  const h = (0.2 * deltaY);
+  const w = (.3 * deltaX);
+  const h = (.3 * deltaY);
   const leftCoords = (x: number, pin: number) => ([
-    ((x + 0.40) * deltaX), height - ((pin + 0.6) * deltaY)
+    ((x + 0.29) * deltaX), height - ((pin + 0.7) * deltaY)
   ]);
   const rightCoords = (x: number, pin: number) => ([
-    ((x + 0.90) * deltaX), height - (pin * deltaY) - 3
+    ((x + 0.87) * deltaX), height - (pin * deltaY) - 5
   ]);
-  const Over = ([x, y]: number[]) => {
+  const setupCross = (x: number, y: number) => {
+    ctx.lineWidth = 5;
     ctx.clearRect( x, y, w, h );
     ctx.beginPath();
+  };
+  const finishCross = () => {
+    ctx.stroke();
+    ctx.closePath();
+  };
+  const O = ([x, y]: number[]) => {
+    setupCross(x, y);
     ctx.moveTo(x, y);
     ctx.lineTo(x + w, y + h);
-    ctx.stroke();
-    ctx.closePath();
+    finishCross();
   };
-  const Under = ([x, y]: number[]) => {
-    ctx.clearRect( x, y, w, h );
-    ctx.beginPath();
+  const U = ([x, y]: number[]) => {
+    setupCross(x, y);
     ctx.moveTo(x + w, y);
     ctx.lineTo(x, y + h);
-    ctx.stroke();
-    ctx.closePath();
+    finishCross();
   };
-  for (let pin = 0; pin < knot.bights; pin++) {
+  const Over = knot.sobre ? U : O;
+  const Under = knot.sobre ? O : U;
+  for (let pin = 0; pin <= knot.bights; pin++) {
     // assume column coded
-    ctx.lineWidth = 5;
     const coding = knot.coding.split('');
     for (let x = 0; x < Math.floor(across); x++) {
       const left = coding.shift();
@@ -184,9 +190,10 @@ const drawBorders = (canvas: HTMLCanvasElement) => {
   const height = canvas.height;
   const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
 
-  ctx.fillStyle = 'white';
-  ctx.fillRect(-PAD, -PAD, width, PAD - 8);
-  ctx.fillRect(-PAD, height - (2 * PAD + 8), width, PAD + 8);
-  ctx.fillRect(-PAD, - PAD, PAD, height);
-  ctx.fillRect(width - (2 * PAD), - PAD, PAD, height);
+  // horizontal
+  // ctx.clearRect(-PAD, -PAD, width, PAD - 4);
+  ctx.clearRect(-PAD, height - (2 * PAD), width, PAD);
+  // vertical
+  ctx.clearRect(-PAD, - PAD, PAD, height);
+  ctx.clearRect(width - (2 * PAD), - PAD, PAD, height);
 };
