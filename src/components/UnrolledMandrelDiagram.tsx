@@ -180,6 +180,22 @@ export const UnrolledMandrelDiagram: React.FC<Props> = ({
       ctx.fill();
     });
 
+    // Pin number labels (1-indexed bight number for each pin)
+    ctx.font = `${Math.max(8, m.cellSize * 0.4)}px sans-serif`;
+    ctx.textBaseline = 'middle';
+
+    left.forEach(pin => {
+      ctx.fillStyle = '#555';
+      ctx.textAlign = 'right';
+      ctx.fillText(`${pin.pinNumber + 1}`, pin.x - m.pinRadius - 3, pin.y);
+    });
+
+    right.forEach(pin => {
+      ctx.fillStyle = '#555';
+      ctx.textAlign = 'left';
+      ctx.fillText(`${pin.pinNumber + 1}`, pin.x + m.pinRadius + 3, pin.y);
+    });
+
   }, [knot, strandWidth, gapWidth]);
 
   return (
