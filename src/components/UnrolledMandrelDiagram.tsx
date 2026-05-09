@@ -129,6 +129,57 @@ export const UnrolledMandrelDiagram: React.FC<Props> = ({
     ctx.drawImage(bsCanvas, 0, 0);
     ctx.drawImage(slCanvas, 0, 0);
 
+    // Draw bight arcs: strand wraps around each pin
+    const { left, right } = getPinPositions(knot, m);
+    const arcR = m.pinRadius + m.strandWidth / 2;
+
+    const drawArc = (pin: MandrelPin, isLeftSide: boolean) => {
+      const color = knot.strandColors[pin.strandIndex];
+
+      // Outline arc (black, wider)
+      ctx.beginPath();
+      ctx.strokeStyle = '#000';
+      ctx.lineWidth = m.strandWidth + m.outlineWidth * 2;
+      ctx.lineCap = 'round';
+      if (isLeftSide) {
+        // Left pin: arc from 210° to 330°, clockwise
+        ctx.arc(pin.x, pin.y, arcR, (210 * Math.PI) / 180, (330 * Math.PI) / 180, false);
+      } else {
+        // Right pin: arc from 150° to 30°, counterclockwise (wraps over top)
+        ctx.arc(pin.x, pin.y, arcR, (150 * Math.PI) / 180, (30 * Math.PI) / 180, true);
+      }
+      ctx.stroke();
+
+      // Color arc
+      ctx.beginPath();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = m.strandWidth;
+      ctx.lineCap = 'round';
+      if (isLeftSide) {
+        ctx.arc(pin.x, pin.y, arcR, (210 * Math.PI) / 180, (330 * Math.PI) / 180, false);
+      } else {
+        ctx.arc(pin.x, pin.y, arcR, (150 * Math.PI) / 180, (30 * Math.PI) / 180, true);
+      }
+      ctx.stroke();
+    };
+
+    left.forEach(pin => drawArc(pin, true));
+    right.forEach(pin => drawArc(pin, false));
+
+    // Draw pin dots on top
+    left.forEach(pin => {
+      ctx.beginPath();
+      ctx.fillStyle = '#333';
+      ctx.arc(pin.x, pin.y, m.pinRadius, 0, Math.PI * 2);
+      ctx.fill();
+    });
+    right.forEach(pin => {
+      ctx.beginPath();
+      ctx.fillStyle = '#333';
+      ctx.arc(pin.x, pin.y, m.pinRadius, 0, Math.PI * 2);
+      ctx.fill();
+    });
+
   }, [knot, strandWidth, gapWidth]);
 
   return (
