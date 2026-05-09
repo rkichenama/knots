@@ -1,210 +1,249 @@
 import { describe, it, expect } from 'vitest';
-import { getPinPositions, getHalfCycleLines, getCrossings, MandrelMetrics } from './unrolled-mandrel';
+import {
+  computeMandrelPieces,
+  MandrelMetricsFSA,
+  MandrelPiece,
+  // Legacy types still exported — just verify they import without error
+  MandrelPin,
+  MandrelLine,
+  MandrelCrossing,
+  MandrelMetrics,
+  getPinPositions,
+  getHalfCycleLines,
+  getCrossings,
+  makeMandrelMetrics,
+} from './unrolled-mandrel';
 import { InterweavedKnot } from './interweaved-knot';
 
-function makeMetrics(strandWidth = 12, gapWidth = 4): MandrelMetrics {
-  const cellSize = strandWidth + gapWidth;
-  return {
-    strandWidth,
-    gapWidth,
-    cellSize,
-    margin: cellSize * 2,
-    pinRadius: gapWidth / 2,
-    outlineWidth: 2,
-  };
-}
+// ── Legacy stub smoke-tests ──────────────────────────────────────────────────
+// getPinPositions / getHalfCycleLines / getCrossings are now stubs that return [].
+// We just verify they still export and return arrays (not throw).
 
-describe('getPinPositions', () => {
-  it('returns left and right arrays of equal length', () => {
+describe('legacy stubs', () => {
+  it('makeMandrelMetrics returns a valid MandrelMetrics object', () => {
+    const m = makeMandrelMetrics(12, 4);
+    expect(m.strandWidth).toBe(12);
+    expect(m.gapWidth).toBe(4);
+    expect(m.cellSize).toBe(16);
+    expect(m.margin).toBe(32);
+    expect(m.pinRadius).toBe(2);
+    expect(m.outlineWidth).toBe(2);
+  });
+
+  it('getPinPositions returns empty arrays (stub)', () => {
     const knot = new InterweavedKnot({ parts: 5, bights: 4, strands: [{}] });
-    const m = makeMetrics();
+    const m = makeMandrelMetrics(12, 4);
     const { left, right } = getPinPositions(knot, m);
-    expect(left.length).toBe(right.length);
+    expect(Array.isArray(left)).toBe(true);
+    expect(Array.isArray(right)).toBe(true);
   });
 
-  it('total pins = numStrands × bights', () => {
-    const knot = new InterweavedKnot({ parts: 4, bights: 6, strands: [{}, {}] });
-    const m = makeMetrics();
-    const { left } = getPinPositions(knot, m);
-    expect(left.length).toBe(knot.numStrands * knot.bights);
-  });
-
-  it('left pins all have x = margin', () => {
+  it('getHalfCycleLines returns empty array (stub)', () => {
     const knot = new InterweavedKnot({ parts: 5, bights: 4, strands: [{}] });
-    const m = makeMetrics();
-    const { left } = getPinPositions(knot, m);
-    for (const p of left) {
-      expect(p.x).toBe(m.margin);
-    }
+    const m = makeMandrelMetrics(12, 4);
+    const lines = getHalfCycleLines(knot, m);
+    expect(Array.isArray(lines)).toBe(true);
   });
 
-  it('right pins all have x = margin + mandrelWidth', () => {
+  it('getCrossings returns empty array (stub)', () => {
     const knot = new InterweavedKnot({ parts: 5, bights: 4, strands: [{}] });
-    const m = makeMetrics();
-    const mandrelWidth = (knot.parts - 1) * m.cellSize;
-    const { right } = getPinPositions(knot, m);
-    for (const p of right) {
-      expect(p.x).toBeCloseTo(m.margin + mandrelWidth);
-    }
-  });
-
-  it('pin Y values are spaced by cellSize', () => {
-    const knot = new InterweavedKnot({ parts: 5, bights: 4, strands: [{}] });
-    const m = makeMetrics();
-    const { left } = getPinPositions(knot, m);
-    for (let i = 1; i < left.length; i++) {
-      expect(left[i].y - left[i - 1].y).toBeCloseTo(m.cellSize);
-    }
-  });
-
-  it('each pin carries strandIndex in range [0, numStrands)', () => {
-    const knot = new InterweavedKnot({ parts: 4, bights: 6, strands: [{}, {}] });
-    const m = makeMetrics();
-    const { left } = getPinPositions(knot, m);
-    for (const p of left) {
-      expect(p.strandIndex).toBeGreaterThanOrEqual(0);
-      expect(p.strandIndex).toBeLessThan(knot.numStrands);
-    }
-  });
-
-  it('pins interleave strands: pin[0]=strand0, pin[1]=strand1, pin[2]=strand0...', () => {
-    const knot = new InterweavedKnot({ parts: 4, bights: 6, strands: [{}, {}] });
-    const m = makeMetrics();
-    const { left } = getPinPositions(knot, m);
-    expect(left[0].strandIndex).toBe(0);
-    expect(left[1].strandIndex).toBe(1);
-    expect(left[2].strandIndex).toBe(0);
-  });
-
-  it('odd parts: right pins offset up by cellSize/2', () => {
-    const knot = new InterweavedKnot({ parts: 5, bights: 4, strands: [{}] });
-    const m = makeMetrics();
-    const { left, right } = getPinPositions(knot, m);
-    expect(right[0].y).toBeCloseTo(left[0].y - m.cellSize / 2);
-  });
-
-  it('even parts: right pins same Y as left pins', () => {
-    const knot = new InterweavedKnot({ parts: 4, bights: 6, strands: [{}, {}] });
-    const m = makeMetrics();
-    const { left, right } = getPinPositions(knot, m);
-    expect(right[0].y).toBeCloseTo(left[0].y);
+    const m = makeMandrelMetrics(12, 4);
+    const crossings = getCrossings([], knot, m);
+    expect(Array.isArray(crossings)).toBe(true);
   });
 });
 
-describe('getHalfCycleLines', () => {
-  it('returns one line per half-cycle per strand', () => {
+// ── computeMandrelPieces ─────────────────────────────────────────────────────
+
+describe('computeMandrelPieces — metrics', () => {
+  it('returns metrics with positive canvasWidth and canvasHeight', () => {
     const knot = new InterweavedKnot({ parts: 5, bights: 4, strands: [{}] });
-    const m = makeMetrics();
-    const lines = getHalfCycleLines(knot, m);
-    const expected = knot.strands.reduce((s, strand) => s + strand.halfCycles.length, 0);
-    expect(lines.length).toBe(expected);
+    const { metrics } = computeMandrelPieces(knot, 20);
+    expect(metrics.canvasWidth).toBeGreaterThan(0);
+    expect(metrics.canvasHeight).toBeGreaterThan(0);
   });
 
-  it('each line has strandIndex in valid range', () => {
+  it('canvasHeight = bights * bightDist for single-strand knot', () => {
+    const knot = new InterweavedKnot({ parts: 5, bights: 4, strands: [{}] });
+    const { metrics } = computeMandrelPieces(knot, 20);
+    // totalPins = 1 * 4 = 4, bightDist = 40
+    expect(metrics.canvasHeight).toBeCloseTo(metrics.bightDist * knot.bights);
+  });
+
+  it('bightDist = strandWidth * 2', () => {
+    const knot = new InterweavedKnot({ parts: 5, bights: 4, strands: [{}] });
+    const { metrics } = computeMandrelPieces(knot, 20);
+    expect(metrics.bightDist).toBeCloseTo(40);
+  });
+
+  it('angle is in (0, PI/2)', () => {
+    const knot = new InterweavedKnot({ parts: 5, bights: 4, strands: [{}] });
+    const { metrics } = computeMandrelPieces(knot, 20);
+    expect(metrics.angle).toBeGreaterThan(0);
+    expect(metrics.angle).toBeLessThan(Math.PI / 2);
+  });
+
+  it('dx is positive', () => {
+    const knot = new InterweavedKnot({ parts: 5, bights: 4, strands: [{}] });
+    const { metrics } = computeMandrelPieces(knot, 20);
+    expect(metrics.dx).toBeGreaterThan(0);
+  });
+
+  it('dy is negative (going up per step)', () => {
+    const knot = new InterweavedKnot({ parts: 5, bights: 4, strands: [{}] });
+    const { metrics } = computeMandrelPieces(knot, 20);
+    expect(metrics.dy).toBeLessThan(0);
+  });
+
+  it('partDist * parts ≈ hypotenuse of (canvasInnerWidth, adj)', () => {
+    const knot = new InterweavedKnot({ parts: 5, bights: 4, strands: [{}] });
+    const { metrics } = computeMandrelPieces(knot, 20);
+    // dx = partDist * sin(angle), so parts*dx = parts*partDist*sin(angle)
+    // This is not a simple invariant to check, but we can verify Pythagoras:
+    // partDist^2 = dx^2 + dy^2
+    expect(metrics.partDist * metrics.partDist).toBeCloseTo(
+      metrics.dx * metrics.dx + metrics.dy * metrics.dy
+    );
+  });
+
+  it('metrics.strandWidth equals input strandWidth', () => {
+    const knot = new InterweavedKnot({ parts: 5, bights: 4, strands: [{}] });
+    const sw = 15;
+    const { metrics } = computeMandrelPieces(knot, sw);
+    expect(metrics.strandWidth).toBe(sw);
+  });
+});
+
+describe('computeMandrelPieces — pieces structure', () => {
+  it('returns pieces array with length = numStrands', () => {
+    const knot = new InterweavedKnot({ parts: 5, bights: 4, strands: [{}] });
+    const { pieces } = computeMandrelPieces(knot, 20);
+    expect(pieces.length).toBe(knot.numStrands);
+  });
+
+  it('multi-strand: pieces array has one entry per strand', () => {
     const knot = new InterweavedKnot({ parts: 4, bights: 6, strands: [{}, {}] });
-    const m = makeMetrics();
-    const lines = getHalfCycleLines(knot, m);
-    for (const l of lines) {
-      expect(l.strandIndex).toBeGreaterThanOrEqual(0);
-      expect(l.strandIndex).toBeLessThan(knot.numStrands);
-    }
+    const { pieces } = computeMandrelPieces(knot, 20);
+    expect(pieces.length).toBe(2);
   });
 
-  it('line from.x and to.x are margin or margin+mandrelWidth', () => {
+  it('each strand has (parts-1)*(2*bights) + 2*bights pieces total', () => {
+    // Each HC contributes (parts-1) crossings + 1 miter = parts pieces.
+    // There are 2*bights HCs per strand.
+    // Total = parts * 2 * bights pieces per strand.
     const knot = new InterweavedKnot({ parts: 5, bights: 4, strands: [{}] });
-    const m = makeMetrics();
-    const mandrelWidth = (knot.parts - 1) * m.cellSize;
-    const lines = getHalfCycleLines(knot, m);
-    for (const l of lines) {
-      expect([m.margin, m.margin + mandrelWidth]).toContain(l.from.x);
-      expect([m.margin, m.margin + mandrelWidth]).toContain(l.to.x);
-    }
-  });
-
-  it('from.x !== to.x (each line crosses mandrel)', () => {
-    const knot = new InterweavedKnot({ parts: 5, bights: 4, strands: [{}] });
-    const m = makeMetrics();
-    const lines = getHalfCycleLines(knot, m);
-    for (const l of lines) {
-      expect(l.from.x).not.toBe(l.to.x);
-    }
-  });
-
-  it('isBackslash is true when line goes down (to.y > from.y)', () => {
-    const knot = new InterweavedKnot({ parts: 5, bights: 4, strands: [{}] });
-    const m = makeMetrics();
-    const lines = getHalfCycleLines(knot, m);
-    for (const l of lines) {
-      expect(l.isBackslash).toBe(l.to.y > l.from.y);
-    }
-  });
-
-  it('free-run HCs (no runs) are marked isFreeRun=true', () => {
-    const knot = new InterweavedKnot({ parts: 5, bights: 4, strands: [{}] });
-    const m = makeMetrics();
-    const lines = getHalfCycleLines(knot, m);
     const strand = knot.strands[0];
-    // Find any HC with no runs and verify the corresponding line is marked isFreeRun
-    strand.halfCycles.forEach((hc, i) => {
-      if (hc.runs.length === 0) {
-        expect(lines[i].isFreeRun).toBe(true);
-      } else {
-        expect(lines[i].isFreeRun).toBe(false);
+    const { pieces } = computeMandrelPieces(knot, 20);
+    const expected = strand.parts * strand.halfCycles.length;
+    expect(pieces[0].length).toBe(expected);
+  });
+
+  it('piece types are valid enum values', () => {
+    const knot = new InterweavedKnot({ parts: 5, bights: 4, strands: [{}] });
+    const { pieces } = computeMandrelPieces(knot, 20);
+    const validTypes = new Set(['right', 'left', 'right_miter', 'left_miter']);
+    for (const strand of pieces) {
+      for (const p of strand) {
+        expect(validTypes.has(p.type)).toBe(true);
+      }
+    }
+  });
+
+  it('miter pieces have uo=null', () => {
+    const knot = new InterweavedKnot({ parts: 5, bights: 4, strands: [{}] });
+    const { pieces } = computeMandrelPieces(knot, 20);
+    for (const strand of pieces) {
+      for (const p of strand) {
+        if (p.type === 'right_miter' || p.type === 'left_miter') {
+          expect(p.uo).toBeNull();
+        }
+      }
+    }
+  });
+
+  it('crossing pieces have uo = O or U', () => {
+    const knot = new InterweavedKnot({ parts: 5, bights: 4, strands: [{}] });
+    const { pieces } = computeMandrelPieces(knot, 20);
+    for (const strand of pieces) {
+      for (const p of strand) {
+        if (p.type === 'right' || p.type === 'left') {
+          expect(p.uo === 'O' || p.uo === 'U').toBe(true);
+        }
+      }
+    }
+  });
+
+  it('piece strandIndex matches strand array index', () => {
+    const knot = new InterweavedKnot({ parts: 4, bights: 6, strands: [{}, {}] });
+    const { pieces } = computeMandrelPieces(knot, 20);
+    pieces.forEach((strandPieces, si) => {
+      for (const p of strandPieces) {
+        expect(p.strandIndex).toBe(si);
       }
     });
   });
+
+  it('hcIndex is in [0, 2*bights)', () => {
+    const knot = new InterweavedKnot({ parts: 5, bights: 4, strands: [{}] });
+    const { pieces } = computeMandrelPieces(knot, 20);
+    const maxHC = knot.strands[0].halfCycles.length;
+    for (const strand of pieces) {
+      for (const p of strand) {
+        expect(p.hcIndex).toBeGreaterThanOrEqual(0);
+        expect(p.hcIndex).toBeLessThan(maxHC);
+      }
+    }
+  });
+
+  it('HC0 pieces have type=right, HC1 pieces have type=left (or miter equivalent)', () => {
+    const knot = new InterweavedKnot({ parts: 5, bights: 4, strands: [{}] });
+    const { pieces } = computeMandrelPieces(knot, 20);
+    const hc0 = pieces[0].filter(p => p.hcIndex === 0);
+    const hc1 = pieces[0].filter(p => p.hcIndex === 1);
+    // All HC0 pieces should be 'right' or 'right_miter'
+    for (const p of hc0) {
+      expect(p.type === 'right' || p.type === 'right_miter').toBe(true);
+    }
+    // All HC1 pieces should be 'left' or 'left_miter'
+    for (const p of hc1) {
+      expect(p.type === 'left' || p.type === 'left_miter').toBe(true);
+    }
+  });
+
+  it('x coordinates are finite numbers', () => {
+    const knot = new InterweavedKnot({ parts: 5, bights: 6, strands: [{}] });
+    const { pieces } = computeMandrelPieces(knot, 20);
+    for (const strand of pieces) {
+      for (const p of strand) {
+        expect(isFinite(p.x)).toBe(true);
+        expect(isFinite(p.y)).toBe(true);
+      }
+    }
+  });
+
+  it('y coordinates are within [0, canvasHeight)', () => {
+    const knot = new InterweavedKnot({ parts: 5, bights: 4, strands: [{}] });
+    const { metrics, pieces } = computeMandrelPieces(knot, 20);
+    for (const strand of pieces) {
+      for (const p of strand) {
+        expect(p.y).toBeGreaterThanOrEqual(0);
+        expect(p.y).toBeLessThan(metrics.canvasHeight);
+      }
+    }
+  });
 });
 
-describe('getCrossings', () => {
-  it('returns array (may be empty for free-run only knots)', () => {
-    const knot = new InterweavedKnot({ parts: 5, bights: 4, strands: [{}] });
-    const m = makeMetrics();
-    const lines = getHalfCycleLines(knot, m);
-    const crossings = getCrossings(lines, knot, m);
-    expect(Array.isArray(crossings)).toBe(true);
+describe('computeMandrelPieces — free-run knot (4P×3B)', () => {
+  it('4P×3B knot produces pieces without throwing', () => {
+    const knot = new InterweavedKnot({ parts: 4, bights: 3, strands: [{}] });
+    expect(() => computeMandrelPieces(knot, 20)).not.toThrow();
   });
 
-  it('crossing x is within mandrel bounds', () => {
-    const knot = new InterweavedKnot({ parts: 5, bights: 6, strands: [{}] });
-    const m = makeMetrics();
-    const mandrelWidth = (knot.parts - 1) * m.cellSize;
-    const lines = getHalfCycleLines(knot, m);
-    const crossings = getCrossings(lines, knot, m);
-    for (const c of crossings) {
-      expect(c.x).toBeGreaterThan(m.margin);
-      expect(c.x).toBeLessThan(m.margin + mandrelWidth);
-    }
-  });
-
-  it('isBackslashOver is boolean', () => {
-    const knot = new InterweavedKnot({ parts: 5, bights: 6, strands: [{}] });
-    const m = makeMetrics();
-    const lines = getHalfCycleLines(knot, m);
-    const crossings = getCrossings(lines, knot, m);
-    for (const c of crossings) {
-      expect(typeof c.isBackslashOver).toBe('boolean');
-    }
-  });
-
-  it('each crossing references a backslash line and slash line', () => {
-    const knot = new InterweavedKnot({ parts: 5, bights: 6, strands: [{}] });
-    const m = makeMetrics();
-    const lines = getHalfCycleLines(knot, m);
-    const crossings = getCrossings(lines, knot, m);
-    for (const c of crossings) {
-      expect(c.backslashLine.isBackslash).toBe(true);
-      expect(c.slashLine.isBackslash).toBe(false);
-    }
-  });
-
-  it('no crossings from free-run lines', () => {
-    const knot = new InterweavedKnot({ parts: 5, bights: 4, strands: [{}] });
-    const m = makeMetrics();
-    const lines = getHalfCycleLines(knot, m);
-    const crossings = getCrossings(lines, knot, m);
-    for (const c of crossings) {
-      expect(c.backslashLine.isFreeRun).toBe(false);
-      expect(c.slashLine.isFreeRun).toBe(false);
-    }
+  it('pieces for 4P×3B have the right count', () => {
+    const knot = new InterweavedKnot({ parts: 4, bights: 3, strands: [{}] });
+    const strand = knot.strands[0];
+    const { pieces } = computeMandrelPieces(knot, 20);
+    const expected = strand.parts * strand.halfCycles.length;
+    expect(pieces[0].length).toBe(expected);
   });
 });

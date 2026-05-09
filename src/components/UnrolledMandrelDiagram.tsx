@@ -1,19 +1,11 @@
 import * as React from 'react';
 import styled from 'styled-components';
 import { InterweavedKnot } from '../lib/interweaved-knot';
-import {
-  makeMandrelMetrics,
-  getPinPositions,
-  getHalfCycleLines,
-  getCrossings,
-  MandrelLine,
-  MandrelPin,
-} from '../lib/unrolled-mandrel';
+import { computeMandrelPieces, MandrelPiece, MandrelMetricsFSA } from '../lib/unrolled-mandrel';
 
 type Props = {
   knot: InterweavedKnot;
   strandWidth?: number;
-  gapWidth?: number;
 };
 
 const Container = styled.div`
@@ -28,10 +20,158 @@ const Canvas = styled.canvas`
   display: block;
 `;
 
+// ── Drawing helpers ───────────────────────────────────────────────────────────
+
+/**
+ * Draw a crossing piece (right or left) at (x, y).
+ *
+ * For a 'right' piece (going right), rotate by: PI/2 + angle
+ * For a 'left'  piece (going left),  rotate by: PI/2 - angle
+ *
+ * The strand is rendered as a filled rect centered at origin, width=partDist,
+ * height=strandWidth, with two edge-lines along the strand direction.
+ *
+ * Over pieces (uo='O') fill BEFORE drawing edge lines (appears on top).
+ * Under pieces (uo='U') fill AFTER drawing edge lines (appears below).
+ */
+function drawCrossing(
+  ctx: CanvasRenderingContext2D,
+  piece: MandrelPiece,
+  metrics: MandrelMetricsFSA,
+  color: string
+): void {
+  const { x, y, type, uo } = piece;
+  const { partDist, angle, strandWidth } = metrics;
+  const sw = strandWidth;
+  const pd = partDist;
+
+  ctx.save();
+  ctx.translate(x, y);
+
+  if (type === 'right') {
+    ctx.rotate(Math.PI / 2 + angle);
+  } else {
+    // left
+    ctx.rotate(Math.PI / 2 - angle);
+  }
+
+  const fillStrand = () => {
+    ctx.fillStyle = color;
+    ctx.fillRect(-pd / 2 - 0.5, -sw / 2, pd + 1, sw);
+  };
+
+  const drawEdgeLines = () => {
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 1;
+    // Top edge line
+    ctx.beginPath();
+    ctx.moveTo(-pd / 2, -sw / 2);
+    ctx.lineTo(pd / 2, -sw / 2);
+    ctx.stroke();
+    // Bottom edge line
+    ctx.beginPath();
+    ctx.moveTo(-pd / 2, sw / 2);
+    ctx.lineTo(pd / 2, sw / 2);
+    ctx.stroke();
+  };
+
+  if (uo === 'O') {
+    // Over: fill first (solid color underneath edge lines)
+    fillStrand();
+    drawEdgeLines();
+  } else {
+    // Under: draw edge lines first, then fill on top — but since 'under' means
+    // this strand passes beneath, we use destination-over compositing so the
+    // fill goes behind whatever was drawn already.
+    ctx.globalCompositeOperation = 'destination-over';
+    drawEdgeLines();
+    fillStrand();
+  }
+
+  ctx.restore();
+}
+
+/**
+ * Draw a miter (bight wrap) piece at (x, y).
+ *
+ * FSA draws top_miter geometry, then applies a rotation to orient it:
+ *   right_miter: rotate -PI/2 (bight wraps on the right side)
+ *   left_miter:  rotate +PI/2 (bight wraps on the left side)
+ *
+ * top_miter geometry (at origin):
+ *   Two quadratic curves connecting the two strand edges around the pin arc.
+ */
+function drawMiter(
+  ctx: CanvasRenderingContext2D,
+  piece: MandrelPiece,
+  metrics: MandrelMetricsFSA,
+  color: string
+): void {
+  const { x, y, type } = piece;
+  const { partDist, angle, strandWidth } = metrics;
+
+  const l = partDist * 0.5;
+  const w = strandWidth * 0.5;
+  const cosA = Math.cos(angle);
+  const sinA = Math.sin(angle);
+
+  // top_miter control points (FSA reference)
+  const x1 = l * cosA - w * sinA;
+  const y1 = -l * sinA - w * cosA;
+  const x2 = l * cosA + w * sinA;
+  const y2 = -l * sinA + w * cosA;
+  const x3 = 0;
+  const y3 = w / cosA; // outer control point
+  const x4 = -l * cosA + w * sinA;
+  const y4 = l * sinA + w * cosA;
+  const x5 = -l * cosA - w * sinA;
+  const y5 = l * sinA - w * cosA;
+  const x6 = 0;
+  const y6 = -w / cosA; // inner control point
+
+  ctx.save();
+  ctx.translate(x, y);
+
+  if (type === 'right_miter') {
+    ctx.rotate(-Math.PI / 2);
+  } else {
+    // left_miter
+    ctx.rotate(Math.PI / 2);
+  }
+
+  // Fill the miter shape
+  ctx.beginPath();
+  ctx.moveTo(x1, y1);
+  ctx.lineTo(x2, y2);
+  ctx.quadraticCurveTo(x3, y3, x4, y4); // outer curve
+  ctx.lineTo(x5, y5);
+  ctx.quadraticCurveTo(x6, y6, x1, y1); // inner curve
+  ctx.closePath();
+  ctx.fillStyle = color;
+  ctx.fill();
+
+  // Stroke outer edge
+  ctx.strokeStyle = '#000';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(x2, y2);
+  ctx.quadraticCurveTo(x3, y3, x4, y4);
+  ctx.stroke();
+
+  // Stroke inner edge
+  ctx.beginPath();
+  ctx.moveTo(x5, y5);
+  ctx.quadraticCurveTo(x6, y6, x1, y1);
+  ctx.stroke();
+
+  ctx.restore();
+}
+
+// ── Component ─────────────────────────────────────────────────────────────────
+
 export const UnrolledMandrelDiagram: React.FC<Props> = ({
   knot,
-  strandWidth = 12,
-  gapWidth = 4,
+  strandWidth = 20,
 }) => {
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
 
@@ -41,162 +181,53 @@ export const UnrolledMandrelDiagram: React.FC<Props> = ({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const m = makeMandrelMetrics(strandWidth, gapWidth);
-    const totalPins = knot.numStrands * knot.bights;
-    const mandrelWidth = (knot.parts - 1) * m.cellSize;
-    const canvasWidth = mandrelWidth + 2 * m.margin;
-    const canvasHeight = totalPins * m.cellSize + 2 * m.margin;
+    const { metrics, pieces } = computeMandrelPieces(knot, strandWidth);
+    const { canvasWidth, canvasHeight } = metrics;
 
-    canvas.width = canvasWidth;
-    canvas.height = canvasHeight;
+    canvas.width = Math.ceil(canvasWidth);
+    canvas.height = Math.ceil(canvasHeight);
 
-    const lines = getHalfCycleLines(knot, m);
-    const crossings = getCrossings(lines, knot, m);
-
-    // Two offscreen canvases: one for \ lines, one for / lines
-    const bsCanvas = document.createElement('canvas');
-    bsCanvas.width = canvasWidth;
-    bsCanvas.height = canvasHeight;
-    const bsCtx = bsCanvas.getContext('2d')!;
-
-    const slCanvas = document.createElement('canvas');
-    slCanvas.width = canvasWidth;
-    slCanvas.height = canvasHeight;
-    const slCtx = slCanvas.getContext('2d')!;
-
-    // Draw one diagonal line segment: outline pass (black wider) then color pass
-    const drawLine = (offCtx: CanvasRenderingContext2D, line: MandrelLine, color: string) => {
-      const arcR = m.pinRadius + m.strandWidth / 2;
-      const dx = line.to.x - line.from.x;
-      const dy = line.to.y - line.from.y;
-      const len = Math.sqrt(dx * dx + dy * dy);
-      const ux = dx / len;
-      const uy = dy / len;
-
-      // Trim endpoints by arc radius so diagonal meets arc tangent
-      const startX = line.from.x + ux * arcR;
-      const startY = line.from.y + uy * arcR;
-      const endX = line.to.x - ux * arcR;
-      const endY = line.to.y - uy * arcR;
-
-      // Outline pass (black, wider)
-      offCtx.beginPath();
-      offCtx.strokeStyle = '#000';
-      offCtx.lineWidth = m.strandWidth + m.outlineWidth * 2;
-      offCtx.lineCap = 'butt';
-      offCtx.moveTo(startX, startY);
-      offCtx.lineTo(endX, endY);
-      offCtx.stroke();
-
-      // Color pass
-      offCtx.beginPath();
-      offCtx.strokeStyle = color;
-      offCtx.lineWidth = m.strandWidth;
-      offCtx.lineCap = 'butt';
-      offCtx.moveTo(startX, startY);
-      offCtx.lineTo(endX, endY);
-      offCtx.stroke();
-    };
-
-    // Draw all lines to appropriate offscreen canvas
-    lines.forEach(line => {
-      const color = knot.strandColors[line.strandIndex];
-      const offCtx = line.isBackslash ? bsCtx : slCtx;
-      drawLine(offCtx, line, color);
-    });
-
-    // Gap punch: cut hole in the "under" layer at each crossing
-    crossings.forEach(cp => {
-      const underCtx = cp.isBackslashOver ? slCtx : bsCtx;
-      const overLine = cp.isBackslashOver ? cp.backslashLine : cp.slashLine;
-
-      const dx = overLine.to.x - overLine.from.x;
-      const dy = overLine.to.y - overLine.from.y;
-      const gapHalf = m.strandWidth / 2 + m.gapWidth;
-      const punchW = m.strandWidth + m.outlineWidth * 2 + 2;
-
-      underCtx.save();
-      underCtx.globalCompositeOperation = 'destination-out';
-      underCtx.translate(cp.x, cp.y);
-      underCtx.rotate(Math.atan2(dy, dx));
-      underCtx.fillRect(-gapHalf, -punchW / 2, gapHalf * 2, punchW);
-      underCtx.restore();
-    });
-
-    // Composite onto main canvas
+    // White background
     ctx.fillStyle = '#fafafa';
     ctx.fillRect(0, 0, canvasWidth, canvasHeight);
-    ctx.drawImage(bsCanvas, 0, 0);
-    ctx.drawImage(slCanvas, 0, 0);
 
-    // Draw bight arcs: strand wraps around each pin
-    const { left, right } = getPinPositions(knot, m);
-    const arcR = m.pinRadius + m.strandWidth / 2;
+    // Determine max HC count across strands
+    const maxHCs = Math.max(...knot.strands.map(s => s.halfCycles.length));
 
-    const drawArc = (pin: MandrelPin, isLeftSide: boolean) => {
-      const color = knot.strandColors[pin.strandIndex];
+    // Draw interleaved by HC index so over/under compositing works across strands
+    for (let hcIdx = 0; hcIdx < maxHCs; hcIdx++) {
+      for (let si = 0; si < knot.numStrands; si++) {
+        const strandPieces = pieces[si].filter(p => p.hcIndex === hcIdx);
+        const color = knot.strandColors[si];
 
-      // Outline arc (black, wider)
-      ctx.beginPath();
-      ctx.strokeStyle = '#000';
-      ctx.lineWidth = m.strandWidth + m.outlineWidth * 2;
-      ctx.lineCap = 'round';
-      if (isLeftSide) {
-        // Left pin: arc from 210° to 330°, clockwise
-        ctx.arc(pin.x, pin.y, arcR, (210 * Math.PI) / 180, (330 * Math.PI) / 180, false);
-      } else {
-        // Right pin: arc from 150° to 30°, counterclockwise (wraps over top)
-        ctx.arc(pin.x, pin.y, arcR, (150 * Math.PI) / 180, (30 * Math.PI) / 180, true);
+        // Within each HC, draw U pieces first, then O pieces, then miters
+        const underPieces = strandPieces.filter(
+          p => (p.type === 'right' || p.type === 'left') && p.uo === 'U'
+        );
+        const overPieces = strandPieces.filter(
+          p => (p.type === 'right' || p.type === 'left') && p.uo === 'O'
+        );
+        const miters = strandPieces.filter(
+          p => p.type === 'right_miter' || p.type === 'left_miter'
+        );
+
+        // Reset composite for each batch
+        ctx.globalCompositeOperation = 'source-over';
+        for (const p of underPieces) {
+          drawCrossing(ctx, p, metrics, color);
+        }
+        ctx.globalCompositeOperation = 'source-over';
+        for (const p of overPieces) {
+          drawCrossing(ctx, p, metrics, color);
+        }
+        ctx.globalCompositeOperation = 'source-over';
+        for (const p of miters) {
+          drawMiter(ctx, p, metrics, color);
+        }
       }
-      ctx.stroke();
+    }
 
-      // Color arc
-      ctx.beginPath();
-      ctx.strokeStyle = color;
-      ctx.lineWidth = m.strandWidth;
-      ctx.lineCap = 'round';
-      if (isLeftSide) {
-        ctx.arc(pin.x, pin.y, arcR, (210 * Math.PI) / 180, (330 * Math.PI) / 180, false);
-      } else {
-        ctx.arc(pin.x, pin.y, arcR, (150 * Math.PI) / 180, (30 * Math.PI) / 180, true);
-      }
-      ctx.stroke();
-    };
-
-    left.forEach(pin => drawArc(pin, true));
-    right.forEach(pin => drawArc(pin, false));
-
-    // Draw pin dots on top
-    left.forEach(pin => {
-      ctx.beginPath();
-      ctx.fillStyle = '#333';
-      ctx.arc(pin.x, pin.y, m.pinRadius, 0, Math.PI * 2);
-      ctx.fill();
-    });
-    right.forEach(pin => {
-      ctx.beginPath();
-      ctx.fillStyle = '#333';
-      ctx.arc(pin.x, pin.y, m.pinRadius, 0, Math.PI * 2);
-      ctx.fill();
-    });
-
-    // Pin number labels (1-indexed bight number for each pin)
-    ctx.font = `${Math.max(8, m.cellSize * 0.4)}px sans-serif`;
-    ctx.textBaseline = 'middle';
-
-    left.forEach(pin => {
-      ctx.fillStyle = '#555';
-      ctx.textAlign = 'right';
-      ctx.fillText(`${pin.pinNumber + 1}`, pin.x - m.pinRadius - 3, pin.y);
-    });
-
-    right.forEach(pin => {
-      ctx.fillStyle = '#555';
-      ctx.textAlign = 'left';
-      ctx.fillText(`${pin.pinNumber + 1}`, pin.x + m.pinRadius + 3, pin.y);
-    });
-
-  }, [knot, strandWidth, gapWidth]);
+  }, [knot, strandWidth]);
 
   return (
     <div>
