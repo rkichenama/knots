@@ -66,6 +66,9 @@ type Props = {
 
 ```
 cellSize      = strandWidth + gapWidth
+margin        = cellSize × 2
+pinRadius     = gapWidth / 2
+outlineWidth  = 2  (px, constant)
 totalPins     = numStrands × bights
 mandrelWidth  = (parts - 1) × cellSize
 canvasWidth   = mandrelWidth + 2 × margin
