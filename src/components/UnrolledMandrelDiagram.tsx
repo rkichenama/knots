@@ -115,19 +115,13 @@ function drawMiter(
   const cosA = Math.cos(angle);
   const sinA = Math.sin(angle);
 
-  // top_miter control points (FSA reference)
-  const x1 = l * cosA - w * sinA;
-  const y1 = -l * sinA - w * cosA;
-  const x2 = l * cosA + w * sinA;
-  const y2 = -l * sinA + w * cosA;
-  const x3 = 0;
-  const y3 = w / cosA; // outer control point
-  const x4 = -l * cosA + w * sinA;
-  const y4 = l * sinA + w * cosA;
-  const x5 = -l * cosA - w * sinA;
-  const y5 = l * sinA - w * cosA;
-  const x6 = 0;
-  const y6 = -w / cosA; // inner control point
+  // top_miter control points — exact FSA values (at origin after translate+rotate)
+  const x1 =  l * cosA - w * sinA;  const y1 = -l * sinA - w * cosA;
+  const x2 =  l * cosA + w * sinA;  const y2 = -l * sinA + w * cosA;
+  const x3 = 0;                      const y3 =  w / cosA;  // outer control point
+  const x4 = -l * cosA - w * sinA;  const y4 = -l * sinA + w * cosA;
+  const x5 = -l * cosA + w * sinA;  const y5 = -l * sinA - w * cosA;
+  const x6 = 0;                      const y6 = -w / cosA;  // inner control point
 
   ctx.save();
   ctx.translate(x, y);

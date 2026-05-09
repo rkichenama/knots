@@ -153,10 +153,14 @@ export function computeMandrelPieces(
   const dx = partDist * Math.sin(angle); // positive, going right
   const dy = -partDist * Math.cos(angle); // negative, going up per step
 
-  // Add margin for miter ends
-  const miterMargin = (strandWidth / 2) / Math.cos(angle) + strandWidth + 20;
-  const canvasWidth = innerWidth + miterMargin * 2;
+  // Canvas dimensions match FSA exactly: no extra margin.
+  // Miters land at x=0 (left edge) and x=innerWidth (right edge).
+  // Extra half-strand-width is added so edge arcs aren't clipped.
+  const edgeMargin = Math.ceil((strandWidth / 2) / Math.cos(angle) + 2);
+  const canvasWidth = innerWidth + edgeMargin * 2;
   const canvasHeight = totalHeight;
+  // x-offset applied to all pieces so FSA's x=0 maps to edgeMargin on canvas
+  const xOffset = edgeMargin;
 
   const metrics: MandrelMetricsFSA = {
     strandWidth,
@@ -171,14 +175,14 @@ export function computeMandrelPieces(
   };
 
   // ── Build pieces for each strand ─────────────────────────────────────────
-  // Strand s starts at starty = s * bightDist (interleaved slots).
+  // FSA: startx=0, starty=0. Strand s is offset by s*bightDist vertically.
   // y wraps modulo totalHeight (full canvas height).
 
   const allPieces: MandrelPiece[][] = knot.strands.map((strand, strandIndex) => {
     const pieces: MandrelPiece[] = [];
     const { halfCycles, coding, sobre, parts } = strand;
 
-    let startx = miterMargin;
+    let startx = 0; // FSA starts at 0; xOffset applied when pushing pieces
     let starty = strandIndex * bightDist;
 
     halfCycles.forEach((hc, hcIndex) => {
@@ -201,7 +205,7 @@ export function computeMandrelPieces(
         if (!goingRight) over = !over; // flip for left-going HCs
 
         const uo: 'O' | 'U' = over ? 'O' : 'U';
-        pieces.push({ x, y, type, uo, strandIndex, hcIndex });
+        pieces.push({ x: x + xOffset, y, type, uo, strandIndex, hcIndex });
       }
 
       // Advance startx/starty to bight (miter position)
@@ -214,7 +218,7 @@ export function computeMandrelPieces(
       starty = ((rawY % canvasHeight) + canvasHeight) % canvasHeight;
 
       const miterType: MandrelPiece['type'] = goingRight ? 'right_miter' : 'left_miter';
-      pieces.push({ x: startx, y: starty, type: miterType, uo: null, strandIndex, hcIndex });
+      pieces.push({ x: startx + xOffset, y: starty, type: miterType, uo: null, strandIndex, hcIndex });
     });
 
     return pieces;
