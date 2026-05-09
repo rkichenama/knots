@@ -144,9 +144,13 @@ describe('getHalfCycleLines', () => {
     const m = makeMetrics();
     const lines = getHalfCycleLines(knot, m);
     const strand = knot.strands[0];
-    const firstHcIsFreeRun = strand.halfCycles[0].runs.length === 0;
-    if (firstHcIsFreeRun) {
-      expect(lines[0].isFreeRun).toBe(true);
-    }
+    // Find any HC with no runs and verify the corresponding line is marked isFreeRun
+    strand.halfCycles.forEach((hc, i) => {
+      if (hc.runs.length === 0) {
+        expect(lines[i].isFreeRun).toBe(true);
+      } else {
+        expect(lines[i].isFreeRun).toBe(false);
+      }
+    });
   });
 });
