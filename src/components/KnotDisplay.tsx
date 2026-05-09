@@ -20,14 +20,14 @@ export const KnotDisplay = () => {
         {knot.bights}B x {knot.parts}P {knot.sobre ? 'sobre' : 'casa'} knot
       </h3>
       <div className='grid grid-cols-2'>
-        <AlgorithmDiagram knot={knot} />
+        <div className='col-span-2'>
+          <AlgorithmDiagram knot={knot} />
+        </div>
         <KnotGrid />
         {/* <PathKnotDiagram knot={interweaved} strandWidth={14} gapWidth={6} /> */}
         {/* <TyingKnotDiagram knot={interweaved} strandWidth={14} gapWidth={6} /> */}
         {/* <OpenTyingKnotDiagram knot={interweaved} strandWidth={14} gapWidth={6} /> */}
-        <div className='col-span-2'>
-          <UnrolledMandrelDiagram knot={interweaved} />
-        </div>
+        <UnrolledMandrelDiagram knot={interweaved} strandWidth={14} />
         <div className='col-span-2'>
           <RunList knot={knot} />
         </div>

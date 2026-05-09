@@ -9,15 +9,14 @@ type Props = {
 };
 
 const Container = styled.div`
-  position: relative;
-  border: 1px solid #ccc;
-  background: #fff;
   overflow: hidden;
   resize: both;
 `;
 
 const Canvas = styled.canvas`
-  display: block;
+  position: relative;
+  height: 100%;
+  width: 100%;
 `;
 
 // ── Drawing helpers ───────────────────────────────────────────────────────────
@@ -165,7 +164,7 @@ function drawMiter(
 
 export const UnrolledMandrelDiagram: React.FC<Props> = ({
   knot,
-  strandWidth = 20,
+  strandWidth = 16,
 }) => {
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
 
