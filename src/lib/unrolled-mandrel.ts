@@ -1,5 +1,5 @@
 import { InterweavedKnot } from './interweaved-knot';
-import { Point } from './tying-logic';
+import { Point, lineIntersection } from './tying-logic';
 
 export type MandrelMetrics = {
   strandWidth: number;
@@ -105,4 +105,43 @@ export function getHalfCycleLines(
   });
 
   return lines;
+}
+
+export function getCrossings(
+  lines: MandrelLine[],
+  knot: InterweavedKnot,
+  m: MandrelMetrics
+): MandrelCrossing[] {
+  const mandrelWidth = (knot.parts - 1) * m.cellSize;
+  const crossings: MandrelCrossing[] = [];
+
+  const backslashLines = lines.filter(l => l.isBackslash && !l.isFreeRun);
+  const slashLines = lines.filter(l => !l.isBackslash && !l.isFreeRun);
+
+  for (const bl of backslashLines) {
+    for (const sl of slashLines) {
+      const pt = lineIntersection(bl.from, bl.to, sl.from, sl.to);
+      if (!pt) continue;
+
+      // Exclude crossings at or outside mandrel edges
+      if (pt.x <= m.margin + 1 || pt.x >= m.margin + mandrelWidth - 1) continue;
+
+      // Determine over/under from strand coding at crossing column
+      const col = Math.floor((pt.x - m.margin) / m.cellSize);
+      const strand = knot.strands[bl.strandIndex];
+      if (col < 0 || col >= strand.coding.length) continue;
+
+      const isBackslashOver = (strand.coding[col] === '\\') !== strand.sobre;
+
+      crossings.push({
+        x: pt.x,
+        y: pt.y,
+        backslashLine: bl,
+        slashLine: sl,
+        isBackslashOver,
+      });
+    }
+  }
+
+  return crossings;
 }

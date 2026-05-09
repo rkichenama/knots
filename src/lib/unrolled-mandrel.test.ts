@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getPinPositions, getHalfCycleLines, MandrelMetrics } from './unrolled-mandrel';
+import { getPinPositions, getHalfCycleLines, getCrossings, MandrelMetrics } from './unrolled-mandrel';
 import { InterweavedKnot } from './interweaved-knot';
 
 function makeMetrics(strandWidth = 12, gapWidth = 4): MandrelMetrics {
@@ -152,5 +152,59 @@ describe('getHalfCycleLines', () => {
         expect(lines[i].isFreeRun).toBe(false);
       }
     });
+  });
+});
+
+describe('getCrossings', () => {
+  it('returns array (may be empty for free-run only knots)', () => {
+    const knot = new InterweavedKnot({ parts: 5, bights: 4, strands: [{}] });
+    const m = makeMetrics();
+    const lines = getHalfCycleLines(knot, m);
+    const crossings = getCrossings(lines, knot, m);
+    expect(Array.isArray(crossings)).toBe(true);
+  });
+
+  it('crossing x is within mandrel bounds', () => {
+    const knot = new InterweavedKnot({ parts: 5, bights: 6, strands: [{}] });
+    const m = makeMetrics();
+    const mandrelWidth = (knot.parts - 1) * m.cellSize;
+    const lines = getHalfCycleLines(knot, m);
+    const crossings = getCrossings(lines, knot, m);
+    for (const c of crossings) {
+      expect(c.x).toBeGreaterThan(m.margin);
+      expect(c.x).toBeLessThan(m.margin + mandrelWidth);
+    }
+  });
+
+  it('isBackslashOver is boolean', () => {
+    const knot = new InterweavedKnot({ parts: 5, bights: 6, strands: [{}] });
+    const m = makeMetrics();
+    const lines = getHalfCycleLines(knot, m);
+    const crossings = getCrossings(lines, knot, m);
+    for (const c of crossings) {
+      expect(typeof c.isBackslashOver).toBe('boolean');
+    }
+  });
+
+  it('each crossing references a backslash line and slash line', () => {
+    const knot = new InterweavedKnot({ parts: 5, bights: 6, strands: [{}] });
+    const m = makeMetrics();
+    const lines = getHalfCycleLines(knot, m);
+    const crossings = getCrossings(lines, knot, m);
+    for (const c of crossings) {
+      expect(c.backslashLine.isBackslash).toBe(true);
+      expect(c.slashLine.isBackslash).toBe(false);
+    }
+  });
+
+  it('no crossings from free-run lines', () => {
+    const knot = new InterweavedKnot({ parts: 5, bights: 4, strands: [{}] });
+    const m = makeMetrics();
+    const lines = getHalfCycleLines(knot, m);
+    const crossings = getCrossings(lines, knot, m);
+    for (const c of crossings) {
+      expect(c.backslashLine.isFreeRun).toBe(false);
+      expect(c.slashLine.isFreeRun).toBe(false);
+    }
   });
 });
