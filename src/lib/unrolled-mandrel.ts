@@ -70,3 +70,37 @@ export function getPinPositions(
 
   return { left, right };
 }
+
+export function getHalfCycleLines(
+  knot: InterweavedKnot,
+  m: MandrelMetrics
+): MandrelLine[] {
+  const { left, right } = getPinPositions(knot, m);
+  const lines: MandrelLine[] = [];
+
+  knot.strands.forEach((strand, strandIndex) => {
+    const leftPins = left.filter(p => p.strandIndex === strandIndex);
+    const rightPins = right.filter(p => p.strandIndex === strandIndex);
+
+    // pin arrays are 0-indexed by pinNumber; halfCycle.fromPin/toPin are 1-indexed bight numbers
+    const leftPin = (n: number): MandrelPin => leftPins[n - 1] ?? leftPins[0];
+    const rightPin = (n: number): MandrelPin => rightPins[n - 1] ?? rightPins[0];
+
+    strand.halfCycles.forEach((hc, hcIndex) => {
+      const goingRight = hcIndex % 2 === 0; // HC 0 starts left, goes right
+      const from = goingRight ? leftPin(hc.fromPin) : rightPin(hc.fromPin);
+      const to = goingRight ? rightPin(hc.toPin) : leftPin(hc.toPin);
+      const isFreeRun = hc.runs.length === 0;
+
+      lines.push({
+        from,
+        to,
+        strandIndex,
+        isBackslash: to.y > from.y,
+        isFreeRun,
+      });
+    });
+  });
+
+  return lines;
+}

@@ -14,7 +14,10 @@ let defaultKnot = {
 
 (() => {
   const params = new URLSearchParams(window.location.hash.slice(1));
-  const candidates = Object.fromEntries(params.entries());
+  const candidates: Record<string, string> = {};
+  params.forEach((value, key) => {
+    candidates[key] = value;
+  });
   for (const key in defaultKnot) {
     if (candidates[key]) {
       defaultKnot[key] = /(bights|parts)/.test(key)

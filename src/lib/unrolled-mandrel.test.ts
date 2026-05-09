@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getPinPositions, MandrelMetrics } from './unrolled-mandrel';
+import { getPinPositions, getHalfCycleLines, MandrelMetrics } from './unrolled-mandrel';
 import { InterweavedKnot } from './interweaved-knot';
 
 function makeMetrics(strandWidth = 12, gapWidth = 4): MandrelMetrics {
@@ -88,5 +88,65 @@ describe('getPinPositions', () => {
     const m = makeMetrics();
     const { left, right } = getPinPositions(knot, m);
     expect(right[0].y).toBeCloseTo(left[0].y);
+  });
+});
+
+describe('getHalfCycleLines', () => {
+  it('returns one line per half-cycle per strand', () => {
+    const knot = new InterweavedKnot({ parts: 5, bights: 4, strands: [{}] });
+    const m = makeMetrics();
+    const lines = getHalfCycleLines(knot, m);
+    const expected = knot.strands.reduce((s, strand) => s + strand.halfCycles.length, 0);
+    expect(lines.length).toBe(expected);
+  });
+
+  it('each line has strandIndex in valid range', () => {
+    const knot = new InterweavedKnot({ parts: 4, bights: 6, strands: [{}, {}] });
+    const m = makeMetrics();
+    const lines = getHalfCycleLines(knot, m);
+    for (const l of lines) {
+      expect(l.strandIndex).toBeGreaterThanOrEqual(0);
+      expect(l.strandIndex).toBeLessThan(knot.numStrands);
+    }
+  });
+
+  it('line from.x and to.x are margin or margin+mandrelWidth', () => {
+    const knot = new InterweavedKnot({ parts: 5, bights: 4, strands: [{}] });
+    const m = makeMetrics();
+    const mandrelWidth = (knot.parts - 1) * m.cellSize;
+    const lines = getHalfCycleLines(knot, m);
+    for (const l of lines) {
+      expect([m.margin, m.margin + mandrelWidth]).toContain(l.from.x);
+      expect([m.margin, m.margin + mandrelWidth]).toContain(l.to.x);
+    }
+  });
+
+  it('from.x !== to.x (each line crosses mandrel)', () => {
+    const knot = new InterweavedKnot({ parts: 5, bights: 4, strands: [{}] });
+    const m = makeMetrics();
+    const lines = getHalfCycleLines(knot, m);
+    for (const l of lines) {
+      expect(l.from.x).not.toBe(l.to.x);
+    }
+  });
+
+  it('isBackslash is true when line goes down (to.y > from.y)', () => {
+    const knot = new InterweavedKnot({ parts: 5, bights: 4, strands: [{}] });
+    const m = makeMetrics();
+    const lines = getHalfCycleLines(knot, m);
+    for (const l of lines) {
+      expect(l.isBackslash).toBe(l.to.y > l.from.y);
+    }
+  });
+
+  it('free-run HCs (no runs) are marked isFreeRun=true', () => {
+    const knot = new InterweavedKnot({ parts: 5, bights: 4, strands: [{}] });
+    const m = makeMetrics();
+    const lines = getHalfCycleLines(knot, m);
+    const strand = knot.strands[0];
+    const firstHcIsFreeRun = strand.halfCycles[0].runs.length === 0;
+    if (firstHcIsFreeRun) {
+      expect(lines[0].isFreeRun).toBe(true);
+    }
   });
 });
