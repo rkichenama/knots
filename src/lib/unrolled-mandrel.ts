@@ -91,6 +91,7 @@ export type MandrelMetricsFSA = {
   dy: number; // y-step per part (negative, going up)
   canvasWidth: number;
   canvasHeight: number;
+  knotGap: number;
 };
 
 // ─── computeMandrelPieces ────────────────────────────────────────────────────
@@ -105,7 +106,8 @@ export type MandrelMetricsFSA = {
  */
 export function computeMandrelPieces(
   knot: InterweavedKnot,
-  strandWidth: number
+  strandWidth: number,
+  knotGap?: number
 ): { metrics: MandrelMetricsFSA; pieces: MandrelPiece[][] } {
   const { numStrands } = knot;
 
@@ -172,6 +174,7 @@ export function computeMandrelPieces(
     dy,
     canvasWidth,
     canvasHeight,
+    knotGap: knotGap ?? 0,
   };
 
   // ── Build pieces for each strand ─────────────────────────────────────────
