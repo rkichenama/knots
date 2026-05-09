@@ -50,19 +50,84 @@ export const UnrolledMandrelDiagram: React.FC<Props> = ({
     canvas.width = canvasWidth;
     canvas.height = canvasHeight;
 
+    const lines = getHalfCycleLines(knot, m);
+    const crossings = getCrossings(lines, knot, m);
+
+    // Two offscreen canvases: one for \ lines, one for / lines
+    const bsCanvas = document.createElement('canvas');
+    bsCanvas.width = canvasWidth;
+    bsCanvas.height = canvasHeight;
+    const bsCtx = bsCanvas.getContext('2d')!;
+
+    const slCanvas = document.createElement('canvas');
+    slCanvas.width = canvasWidth;
+    slCanvas.height = canvasHeight;
+    const slCtx = slCanvas.getContext('2d')!;
+
+    // Draw one diagonal line segment: outline pass (black wider) then color pass
+    const drawLine = (offCtx: CanvasRenderingContext2D, line: MandrelLine, color: string) => {
+      const arcR = m.pinRadius + m.strandWidth / 2;
+      const dx = line.to.x - line.from.x;
+      const dy = line.to.y - line.from.y;
+      const len = Math.sqrt(dx * dx + dy * dy);
+      const ux = dx / len;
+      const uy = dy / len;
+
+      // Trim endpoints by arc radius so diagonal meets arc tangent
+      const startX = line.from.x + ux * arcR;
+      const startY = line.from.y + uy * arcR;
+      const endX = line.to.x - ux * arcR;
+      const endY = line.to.y - uy * arcR;
+
+      // Outline pass (black, wider)
+      offCtx.beginPath();
+      offCtx.strokeStyle = '#000';
+      offCtx.lineWidth = m.strandWidth + m.outlineWidth * 2;
+      offCtx.lineCap = 'butt';
+      offCtx.moveTo(startX, startY);
+      offCtx.lineTo(endX, endY);
+      offCtx.stroke();
+
+      // Color pass
+      offCtx.beginPath();
+      offCtx.strokeStyle = color;
+      offCtx.lineWidth = m.strandWidth;
+      offCtx.lineCap = 'butt';
+      offCtx.moveTo(startX, startY);
+      offCtx.lineTo(endX, endY);
+      offCtx.stroke();
+    };
+
+    // Draw all lines to appropriate offscreen canvas
+    lines.forEach(line => {
+      const color = knot.strandColors[line.strandIndex];
+      const offCtx = line.isBackslash ? bsCtx : slCtx;
+      drawLine(offCtx, line, color);
+    });
+
+    // Gap punch: cut hole in the "under" layer at each crossing
+    crossings.forEach(cp => {
+      const underCtx = cp.isBackslashOver ? slCtx : bsCtx;
+      const overLine = cp.isBackslashOver ? cp.backslashLine : cp.slashLine;
+
+      const dx = overLine.to.x - overLine.from.x;
+      const dy = overLine.to.y - overLine.from.y;
+      const gapHalf = m.strandWidth / 2 + m.gapWidth;
+      const punchW = m.strandWidth + m.outlineWidth * 2 + 2;
+
+      underCtx.save();
+      underCtx.globalCompositeOperation = 'destination-out';
+      underCtx.translate(cp.x, cp.y);
+      underCtx.rotate(Math.atan2(dy, dx));
+      underCtx.fillRect(-gapHalf, -punchW / 2, gapHalf * 2, punchW);
+      underCtx.restore();
+    });
+
+    // Composite onto main canvas
     ctx.fillStyle = '#fafafa';
     ctx.fillRect(0, 0, canvasWidth, canvasHeight);
-
-    // Placeholder grid lines to verify sizing
-    ctx.strokeStyle = '#ddd';
-    ctx.lineWidth = 1;
-    for (let p = 0; p < totalPins; p++) {
-      const y = m.margin + p * m.cellSize + m.cellSize / 2;
-      ctx.beginPath();
-      ctx.moveTo(m.margin, y);
-      ctx.lineTo(m.margin + mandrelWidth, y);
-      ctx.stroke();
-    }
+    ctx.drawImage(bsCanvas, 0, 0);
+    ctx.drawImage(slCanvas, 0, 0);
 
   }, [knot, strandWidth, gapWidth]);
 
