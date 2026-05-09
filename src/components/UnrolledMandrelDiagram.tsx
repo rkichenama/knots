@@ -194,32 +194,29 @@ export const UnrolledMandrelDiagram: React.FC<Props> = ({
     // Determine max HC count across strands
     const maxHCs = Math.max(...knot.strands.map(s => s.halfCycles.length));
 
-    // Draw interleaved by HC index so over/under compositing works across strands
+    // Draw interleaved by HC index so over/under compositing works across strands.
+    // Within each HC: draw crossing pieces in sequence (j order), miter last.
+    // Under pieces use destination-over compositing set inside drawCrossing.
     for (let hcIdx = 0; hcIdx < maxHCs; hcIdx++) {
       for (let si = 0; si < knot.numStrands; si++) {
         const strandPieces = pieces[si].filter(p => p.hcIndex === hcIdx);
         const color = knot.strandColors[si];
 
-        // Within each HC, draw U pieces first, then O pieces, then miters
-        const underPieces = strandPieces.filter(
-          p => (p.type === 'right' || p.type === 'left') && p.uo === 'U'
-        );
-        const overPieces = strandPieces.filter(
-          p => (p.type === 'right' || p.type === 'left') && p.uo === 'O'
+        // Separate crossing pieces (in original order) from miter
+        const crossings = strandPieces.filter(
+          p => p.type === 'right' || p.type === 'left'
         );
         const miters = strandPieces.filter(
           p => p.type === 'right_miter' || p.type === 'left_miter'
         );
 
-        // Reset composite for each batch
+        // Draw crossings in sequence — drawCrossing sets globalCompositeOperation internally
         ctx.globalCompositeOperation = 'source-over';
-        for (const p of underPieces) {
+        for (const p of crossings) {
           drawCrossing(ctx, p, metrics, color);
         }
-        ctx.globalCompositeOperation = 'source-over';
-        for (const p of overPieces) {
-          drawCrossing(ctx, p, metrics, color);
-        }
+
+        // Reset before miter (miters are always source-over)
         ctx.globalCompositeOperation = 'source-over';
         for (const p of miters) {
           drawMiter(ctx, p, metrics, color);

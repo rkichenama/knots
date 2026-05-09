@@ -63,17 +63,22 @@ describe('computeMandrelPieces — metrics', () => {
     expect(metrics.canvasHeight).toBeGreaterThan(0);
   });
 
-  it('canvasHeight = bights * bightDist for single-strand knot', () => {
+  it('canvasHeight = numStrands * bights_per_strand * bightDist for single-strand knot', () => {
     const knot = new InterweavedKnot({ parts: 5, bights: 4, strands: [{}] });
     const { metrics } = computeMandrelPieces(knot, 20);
-    // totalPins = 1 * 4 = 4, bightDist = 40
-    expect(metrics.canvasHeight).toBeCloseTo(metrics.bightDist * knot.bights);
+    // canvasHeight = ceil(numStrands * strandBights * bightDist)
+    // For single strand: Math.ceil(1 * 4 * bightDist)
+    const strandBights = knot.strands[0].bights;
+    expect(metrics.canvasHeight).toBe(Math.ceil(knot.numStrands * strandBights * metrics.bightDist));
   });
 
-  it('bightDist = strandWidth * 2', () => {
+  it('bightDist = (strandWidth * 1.35) * sqrt(2) (FSA cellSize * 2)', () => {
     const knot = new InterweavedKnot({ parts: 5, bights: 4, strands: [{}] });
-    const { metrics } = computeMandrelPieces(knot, 20);
-    expect(metrics.bightDist).toBeCloseTo(40);
+    const sw = 20;
+    const { metrics } = computeMandrelPieces(knot, sw);
+    // bightDist = cellSize * 2, cellSize = (s + s*0.35) * sqrt(2) / 2 = s * 1.35 * sqrt(2) / 2
+    const expected = (sw + sw * 0.35) * Math.sqrt(2) / 2 * 2;
+    expect(metrics.bightDist).toBeCloseTo(expected);
   });
 
   it('angle is in (0, PI/2)', () => {
