@@ -181,7 +181,7 @@ export function computeMandrelPieces(
 
   const allPieces: MandrelPiece[][] = knot.strands.map((strand, strandIndex) => {
     const pieces: MandrelPiece[] = [];
-    const { halfCycles, coding, sobre, parts } = strand;
+    const { halfCycles, parts } = strand;
 
     let startx = 0; // FSA starts at 0; xOffset applied when pushing pieces
     let starty = strandIndex * (heightPerStrand + resolvedGap);
@@ -199,13 +199,10 @@ export function computeMandrelPieces(
 
         const type: MandrelPiece['type'] = goingRight ? 'right' : 'left';
 
-        // Over/under from coding string
-        const codingIndex = goingRight ? j : parts - 2 - j;
-        const ch = coding[codingIndex] ?? '\\';
-        let over = (sobre && ch === '\\') || (!sobre && ch === '/');
-        if (!goingRight) over = !over; // flip for left-going HCs
-
-        const uo: 'O' | 'U' = over ? 'O' : 'U';
+        // O/U comes directly from halfCycle.runs — already accounts for sobre and CBN gating.
+        // runs[j] is undefined for free-run positions (early HCs with fewer active crossings).
+        const run = hc.runs[j] as 'O' | 'U' | undefined;
+        const uo: 'O' | 'U' | null = run ?? null;
         pieces.push({ x: x + xOffset, y, type, uo, strandIndex, hcIndex });
       }
 

@@ -218,13 +218,13 @@ describe('computeMandrelPieces — pieces structure', () => {
     }
   });
 
-  it('crossing pieces have uo = O or U', () => {
+  it('crossing pieces have uo = O, U, or null (null for free-run positions)', () => {
     const knot = new InterweavedKnot({ parts: 5, bights: 4, strands: [{}] });
     const { pieces } = computeMandrelPieces(knot, 20);
     for (const strand of pieces) {
       for (const p of strand) {
         if (p.type === 'right' || p.type === 'left') {
-          expect(p.uo === 'O' || p.uo === 'U').toBe(true);
+          expect(p.uo === 'O' || p.uo === 'U' || p.uo === null).toBe(true);
         }
       }
     }
@@ -287,6 +287,30 @@ describe('computeMandrelPieces — pieces structure', () => {
         expect(p.y).toBeLessThan(metrics.canvasHeight);
       }
     }
+  });
+});
+
+describe('computeMandrelPieces — O/U sourcing', () => {
+  it('HC0 crossing pieces have uo=null (free-run, no runs populated)', () => {
+    // HC0 is always a free-run — Knot.fillHalfCycles only appends to HC1+
+    const knot = new InterweavedKnot({ parts: 7, bights: 6, strands: [{}] });
+    const { pieces } = computeMandrelPieces(knot, 14);
+    const hc0Crossings = pieces[0].filter(p => p.hcIndex === 0 && (p.type === 'right' || p.type === 'left'));
+    expect(hc0Crossings.length).toBeGreaterThan(0);
+    for (const p of hc0Crossings) {
+      expect(p.uo).toBeNull();
+    }
+  });
+
+  it('sobre knot produces different uo pattern than non-sobre', () => {
+    const base  = new InterweavedKnot({ parts: 7, bights: 6, strands: [{ sobre: false }] });
+    const sobre = new InterweavedKnot({ parts: 7, bights: 6, strands: [{ sobre: true  }] });
+    const { pieces: pBase  } = computeMandrelPieces(base,  14);
+    const { pieces: pSobre } = computeMandrelPieces(sobre, 14);
+    const baseCrossings  = pBase[0].filter(p => p.uo !== null && (p.type === 'right' || p.type === 'left'));
+    const sobreCrossings = pSobre[0].filter(p => p.uo !== null && (p.type === 'right' || p.type === 'left'));
+    const anyDiffer = baseCrossings.some((p, i) => sobreCrossings[i]?.uo !== p.uo);
+    expect(anyDiffer).toBe(true);
   });
 });
 
