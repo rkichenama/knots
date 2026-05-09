@@ -5,6 +5,7 @@ import { CombinedRunList } from './CombinedRunList';
 import { InterweavedDiagram } from './InterweavedDiagram';
 import { KnotGrid } from './KnotGrid';
 import { RunList } from './RunList';
+import { UnrolledMandrelDiagram } from './UnrolledMandrelDiagram';
 
 type Props = { interweaved: InterweavedKnot };
 
@@ -37,6 +38,7 @@ export const InterweavedDisplay: React.FC<Props> = ({ interweaved }) => {
 
       {activeTab === 0 && (
         <div className="flex flex-col gap-4">
+          <UnrolledMandrelDiagram knot={interweaved} />
           {/* <InterweavedDiagram strands={interweaved.strands} colors={interweaved.strandColors} /> */}
           <CombinedRunList interweaved={interweaved} />
         </div>
