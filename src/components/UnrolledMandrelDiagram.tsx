@@ -6,6 +6,7 @@ import { computeMandrelPieces, MandrelPiece, MandrelMetricsFSA } from '../lib/un
 type Props = {
   knot: InterweavedKnot;
   strandWidth?: number;
+  knotGap?: number;
 };
 
 const Container = styled.div`
@@ -52,6 +53,14 @@ function drawCrossing(
   } else {
     // left
     ctx.rotate(Math.PI / 2 - angle);
+  }
+
+  // Free-run segment: plain filled rect, no edge lines, no compositing
+  if (uo === null) {
+    ctx.fillStyle = color;
+    ctx.fillRect(-pd / 2, -sw / 2, pd, sw);
+    ctx.restore();
+    return;
   }
 
   const fillStrand = () => {
@@ -165,6 +174,7 @@ function drawMiter(
 export const UnrolledMandrelDiagram: React.FC<Props> = ({
   knot,
   strandWidth = 16,
+  knotGap,
 }) => {
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
 
@@ -174,7 +184,7 @@ export const UnrolledMandrelDiagram: React.FC<Props> = ({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const { metrics, pieces } = computeMandrelPieces(knot, strandWidth);
+    const { metrics, pieces } = computeMandrelPieces(knot, strandWidth, knotGap);
     const { canvasWidth, canvasHeight } = metrics;
 
     canvas.width = Math.ceil(canvasWidth);
