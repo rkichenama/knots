@@ -131,9 +131,6 @@ export function computeMandrelPieces(
   const heightPerStrand = Math.ceil(2 * strandBights * cellSize); // = bights * bightDist
   const innerWidth = Math.ceil(strandParts * cellSize * numStrands);
 
-  // Total canvas height spans all strands (interleaved)
-  const totalHeight = numStrands * heightPerStrand;
-
   // ── FSA geometry ──────────────────────────────────────────────────────────
   // n = floor(strandParts / strandBights)
   // to_pin = hc[0].toPin + floor(n/2) * strandBights
@@ -160,7 +157,8 @@ export function computeMandrelPieces(
   // Extra half-strand-width is added so edge arcs aren't clipped.
   const edgeMargin = Math.ceil((strandWidth / 2) / Math.cos(angle) + 2);
   const canvasWidth = innerWidth + edgeMargin * 2;
-  const canvasHeight = totalHeight;
+  const resolvedGap = knotGap ?? bightDist / 2;
+  const canvasHeight = numStrands * heightPerStrand + (numStrands - 1) * resolvedGap;
   // x-offset applied to all pieces so FSA's x=0 maps to edgeMargin on canvas
   const xOffset = edgeMargin;
 
@@ -174,7 +172,7 @@ export function computeMandrelPieces(
     dy,
     canvasWidth,
     canvasHeight,
-    knotGap: knotGap ?? 0,
+    knotGap: resolvedGap,
   };
 
   // ── Build pieces for each strand ─────────────────────────────────────────
@@ -186,7 +184,7 @@ export function computeMandrelPieces(
     const { halfCycles, coding, sobre, parts } = strand;
 
     let startx = 0; // FSA starts at 0; xOffset applied when pushing pieces
-    let starty = strandIndex * bightDist;
+    let starty = strandIndex * (heightPerStrand + resolvedGap);
 
     halfCycles.forEach((hc, hcIndex) => {
       const goingRight = hcIndex % 2 === 0;

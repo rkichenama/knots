@@ -145,6 +145,32 @@ describe('computeMandrelPieces — metrics', () => {
   });
 });
 
+describe('computeMandrelPieces — knotGap', () => {
+  it('canvasHeight includes gap between strands for multi-strand knot', () => {
+    const knot = new InterweavedKnot({ parts: 4, bights: 6, strands: [{}, {}] });
+    const sw = 20;
+    const { metrics } = computeMandrelPieces(knot, sw);
+    const strandBights = knot.strands[0].bights;
+    const heightPerStrand = Math.ceil(strandBights * metrics.bightDist);
+    const expectedHeight =
+      knot.numStrands * heightPerStrand +
+      (knot.numStrands - 1) * (metrics.bightDist / 2);
+    expect(metrics.canvasHeight).toBeCloseTo(expectedHeight, 0);
+  });
+
+  it('metrics.knotGap equals bightDist/2 when not specified', () => {
+    const knot = new InterweavedKnot({ parts: 5, bights: 4, strands: [{}] });
+    const { metrics } = computeMandrelPieces(knot, 20);
+    expect(metrics.knotGap).toBeCloseTo(metrics.bightDist / 2);
+  });
+
+  it('explicit knotGap reflected in metrics.knotGap', () => {
+    const knot = new InterweavedKnot({ parts: 5, bights: 4, strands: [{}] });
+    const { metrics } = computeMandrelPieces(knot, 20, 30);
+    expect(metrics.knotGap).toBe(30);
+  });
+});
+
 describe('computeMandrelPieces — pieces structure', () => {
   it('returns pieces array with length = numStrands', () => {
     const knot = new InterweavedKnot({ parts: 5, bights: 4, strands: [{}] });
