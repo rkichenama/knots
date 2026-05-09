@@ -129,7 +129,7 @@ export function computeMandrelPieces(
   const bightDist = cellSize * 2;
 
   const heightPerStrand = Math.ceil(2 * strandBights * cellSize); // = bights * bightDist
-  const innerWidth = Math.ceil(strandParts * cellSize);
+  const innerWidth = Math.ceil(strandParts * cellSize * numStrands);
 
   // Total canvas height spans all strands (interleaved)
   const totalHeight = numStrands * heightPerStrand;

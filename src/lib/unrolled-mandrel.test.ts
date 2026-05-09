@@ -117,6 +117,32 @@ describe('computeMandrelPieces — metrics', () => {
     const { metrics } = computeMandrelPieces(knot, sw);
     expect(metrics.strandWidth).toBe(sw);
   });
+
+  it('innerWidth scales by numStrands for multi-strand knot', () => {
+    // 6P×4B → gcd=2, numStrands=2, strandParts=3, strandBights=2
+    const knot1 = new InterweavedKnot({ parts: 6, bights: 4, strands: [{}, {}] });
+    const sw = 20;
+    const { metrics: m1 } = computeMandrelPieces(knot1, sw);
+
+    // Single strand equivalent: 3P×2B
+    const knot2 = new InterweavedKnot({ parts: 3, bights: 2, strands: [{}] });
+    const { metrics: m2 } = computeMandrelPieces(knot2, sw);
+
+    // The 2-strand knot's canvas must be strictly wider than the 1-strand equivalent
+    // (innerWidth doubles; even with edge margin changes canvasWidth must be larger)
+    expect(m1.canvasWidth).toBeGreaterThan(m2.canvasWidth);
+
+    // And the 2-strand inner contribution should be ~2x the 1-strand inner contribution.
+    // innerWidth = ceil(strandParts * cellSize * numStrands), so ratio should be ~2
+    const d = sw * 0.35;
+    const cellSize = (sw + d) * Math.sqrt(2) / 2;
+    const strandParts = knot2.strands[0].parts;
+    const inner1 = Math.ceil(strandParts * cellSize * 1);
+    const inner2 = Math.ceil(strandParts * cellSize * 2);
+    // canvasWidth = innerWidth + edgeMargin*2, edgeMargin depends on angle which depends on innerWidth
+    // Just verify the difference in canvasWidth is at least half the expected inner difference
+    expect(m1.canvasWidth - m2.canvasWidth).toBeGreaterThan((inner2 - inner1) * 0.5);
+  });
 });
 
 describe('computeMandrelPieces — pieces structure', () => {
