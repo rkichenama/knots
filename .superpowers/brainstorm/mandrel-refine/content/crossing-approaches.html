@@ -1,0 +1,57 @@
+<h2>How should crossing O/U be determined?</h2>
+<p class="subtitle">Current code reads <code>coding[j]</code> directly — but Knot already pre-computes the correct O/U per half-cycle via <code>topCodingPattern</code> / <code>botCodingPattern</code>. Three approaches:</p>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Read from halfCycle.runs directly <span style="color:#2a9d8f;font-size:0.85em">(Recommended)</span></h3>
+      <p>Each <code>HalfCycle</code> has a <code>.runs[]</code> array of <code>'O'</code> / <code>'U'</code> strings — the exact sequence computed by <code>Knot.fillHalfCycles()</code> including the progressive CBN gating and sobre flip. Map <code>runs[j]</code> directly to piece <code>uo</code>.</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>Pros</h4><ul>
+          <li>Single source of truth — no re-derivation</li>
+          <li>Sobre, pattern, and CBN gating all correct automatically</li>
+          <li>Simplest code in computeMandrelPieces</li>
+        </ul></div>
+        <div class="cons"><h4>Cons</h4><ul>
+          <li>Requires runs[] to be populated (free-run HCs have no runs — need null handling)</li>
+        </ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Read from topCodingPattern / botCodingPattern arrays</h3>
+      <p>These arrays on <code>Knot</code> hold the final O/U per crossing position (already sobre-flipped). Even-indexed HCs use <code>topCodingPattern</code>, odd use <code>botCodingPattern</code> (reversed). Requires figuring out which index maps to which piece.</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>Pros</h4><ul>
+          <li>Sobre already baked in</li>
+        </ul></div>
+        <div class="cons"><h4>Cons</h4><ul>
+          <li>Index mapping is non-trivial (top vs bot, direction reversal)</li>
+          <li>Still misses CBN gating (not all positions active in early HCs)</li>
+        </ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Re-derive from coding + sobre in computeMandrelPieces (current)</h3>
+      <p>Keep reading <code>coding[j]</code> and applying the sobre flip manually. Fix the direction logic for left-going HCs.</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>Pros</h4><ul>
+          <li>No dependency on HalfCycle internals</li>
+        </ul></div>
+        <div class="cons"><h4>Cons</h4><ul>
+          <li>Ignores CBN gating — early HCs have fewer active crossings than parts-1</li>
+          <li>Sobre flip logic duplicated (already in Knot)</li>
+          <li>Left-going direction reversal is subtle and currently wrong</li>
+        </ul></div>
+      </div>
+    </div>
+  </div>
+</div>

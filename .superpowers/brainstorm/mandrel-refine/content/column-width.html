@@ -1,0 +1,77 @@
+<h2>Column width for multiple interleaved knots</h2>
+<p class="subtitle">When N knots share the same mandrel, strands from different knots alternate pins. A strand run between pins needs horizontal space proportional to N. How should <code>innerWidth</code> scale?</p>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Multiply columns by numStrands <span style="color:#2a9d8f;font-size:0.85em">(Recommended)</span></h3>
+      <p><code>innerWidth = strandParts × cellSize × numStrands</code>. Each column slot expands to fit all interleaved strands. Geometry (partDist, angle, dx, dy) recalculated from new width. Matches freakinsweetapps behaviour exactly.</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>Pros</h4><ul>
+          <li>Correct for any N</li>
+          <li>Single knot (N=1) unchanged</li>
+          <li>Consistent with reference implementation</li>
+        </ul></div>
+        <div class="cons"><h4>Cons</h4><ul>
+          <li>Canvas gets wider with more knots</li>
+        </ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Keep width fixed, shrink cellSize by 1/numStrands</h3>
+      <p>Same canvas width regardless of knot count — compress each cell to fit. <code>cellSize = baseCell / numStrands</code>. Strands get thinner as more knots added.</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>Pros</h4><ul><li>Predictable canvas size</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul>
+          <li>Strands become unreadably thin at N≥3</li>
+          <li>Doesn't match reference</li>
+        </ul></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Visual reference — 7P×6B, 1 vs 3 knots</h3>
+  <div class="split">
+    <div class="mockup">
+      <div class="mockup-header">1 knot (N=1, current width)</div>
+      <div class="mockup-body">
+        <svg width="220" height="80" style="display:block;margin:auto">
+          <!-- 7 columns -->
+          <line x1="20" y1="10" x2="20" y2="70" stroke="#ccc" stroke-width="1"/>
+          <line x1="50" y1="10" x2="50" y2="70" stroke="#ccc" stroke-width="1"/>
+          <line x1="80" y1="10" x2="80" y2="70" stroke="#ccc" stroke-width="1"/>
+          <line x1="110" y1="10" x2="110" y2="70" stroke="#ccc" stroke-width="1"/>
+          <line x1="140" y1="10" x2="140" y2="70" stroke="#ccc" stroke-width="1"/>
+          <line x1="170" y1="10" x2="170" y2="70" stroke="#ccc" stroke-width="1"/>
+          <line x1="200" y1="10" x2="200" y2="70" stroke="#ccc" stroke-width="1"/>
+          <!-- strand -->
+          <polyline points="20,65 50,25 80,55 110,25 140,55 170,25 200,65" fill="none" stroke="#e63946" stroke-width="8" stroke-linejoin="round"/>
+          <text x="110" y="10" text-anchor="middle" fill="#666" font-size="9">col width = cellSize</text>
+        </svg>
+      </div>
+    </div>
+    <div class="mockup">
+      <div class="mockup-header">3 knots (N=3, ×3 wider)</div>
+      <div class="mockup-body">
+        <svg width="220" height="80" style="display:block;margin:auto">
+          <!-- 7 columns × 3 = 21 narrow lines compressed into same view -->
+          <!-- show wider spacing per col -->
+          <text x="110" y="18" text-anchor="middle" fill="#666" font-size="9">col width = cellSize × 3</text>
+          <!-- strand 1 -->
+          <polyline points="10,65 40,30 70,55 100,30 130,55 160,30 210,65" fill="none" stroke="#e63946" stroke-width="6" stroke-linejoin="round"/>
+          <!-- strand 2 offset -->
+          <polyline points="20,65 50,20 80,50 110,20 140,50 170,20 200,65" fill="none" stroke="#457b9d" stroke-width="6" stroke-linejoin="round" stroke-dasharray="6,2"/>
+          <!-- strand 3 offset -->
+          <polyline points="30,65 60,35 90,60 120,35 150,60 180,35 210,65" fill="none" stroke="#2a9d8f" stroke-width="6" stroke-linejoin="round" stroke-dasharray="3,4"/>
+        </svg>
+      </div>
+    </div>
+  </div>
+</div>
